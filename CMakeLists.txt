@@ -30,6 +30,8 @@ if(SolidFrame_FOUND)
 else()
 endif()
 
+include(ExternalProject)
+
 if(EXTERNAL_PATH STREQUAL "")
     set(EXTERNAL_PATH "${CMAKE_CURRENT_BINARY_DIR}/external")
     
@@ -71,6 +73,13 @@ endif()
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
 
+if(CMAKE_SYSTEM MATCHES "Linux*")
+    message("Detected system ON_LINUX")
+
+    set(SYS_BASIC_LIBS pthread rt)
+    set(SYS_DYNAMIC_LOAD_LIB dl)
+endif(CMAKE_SYSTEM MATCHES "Linux*")
+
 #-----------------------------------------------------------------
 # Global include directories
 #-----------------------------------------------------------------
@@ -98,4 +107,5 @@ include(CTest)
 #-----------------------------------------------------------------
 # Project subdirectories
 #-----------------------------------------------------------------
-add_subdirectory (serialization)
+add_subdirectory(serialization)
+add_subdirectory(mpipc)
