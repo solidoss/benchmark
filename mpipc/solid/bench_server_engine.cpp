@@ -24,7 +24,13 @@ namespace bench{
     
 namespace{
     struct Context{
-        Context():ipcservice(manager){}
+        Context():ipcservice(manager){
+#ifdef SOLID_HAS_DEBUG
+            Debug::the().levelMask("ew");
+            Debug::the().moduleMask("any");
+            Debug::the().initStdErr(false, nullptr);
+#endif
+        }
         AioSchedulerT               scheduler;
         
         frame::Manager              manager;
@@ -50,7 +56,9 @@ namespace{
                 }
                 _rrecv_msg_ptr->str.clear();
             }
-            SOLID_CHECK(_rctx.service().sendResponse(_rctx.recipientId(), std::move(_rrecv_msg_ptr)));
+            ErrorConditionT err = _rctx.service().sendResponse(_rctx.recipientId(), std::move(_rrecv_msg_ptr));
+            idbg("send response err: "<<err.message());
+            SOLID_CHECK(!err);
         }
 
         if (_rsent_msg_ptr) {
