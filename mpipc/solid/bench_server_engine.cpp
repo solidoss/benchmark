@@ -56,9 +56,7 @@ namespace{
                 }
                 _rrecv_msg_ptr->str.clear();
             }
-            ErrorConditionT err = _rctx.service().sendResponse(_rctx.recipientId(), std::move(_rrecv_msg_ptr));
-            idbg("send response err: "<<err.message());
-            SOLID_CHECK(!err);
+            SOLID_CHECK(!_rctx.service().sendResponse(_rctx.recipientId(), std::move(_rrecv_msg_ptr)));
         }
 
         if (_rsent_msg_ptr) {

@@ -1,4 +1,3 @@
-#include "solid/system/debug.hpp"
 #include "solid/frame/manager.hpp"
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
@@ -67,12 +66,9 @@ namespace{
         std::shared_ptr<M>&              _rrecv_msg_ptr,
         ErrorConditionT const&           _rerror)
     {
-        idbg("error: "<<_rerror.message());
         SOLID_CHECK(not _rerror);
         SOLID_CHECK(_rrecv_msg_ptr && _rsent_msg_ptr);
-        
         SOLID_CHECK(_rrecv_msg_ptr->str.empty() && _rrecv_msg_ptr->vec.size());
-        
         
         auto   &con_val = *_rctx.any().cast<pair<size_t, size_t>>();
         
@@ -86,8 +82,9 @@ namespace{
             }
             cout<<endl;
         }
+        
         --con_val.second;
-        idbg(_rctx.connectionId()<<" idx = "<<con_val.first<<" loops = "<<con_val.second);
+        
         if(con_val.second){
             _rsent_msg_ptr->str = ctx.line_vec[con_val.first % ctx.line_vec.size()];
             ++con_val.first;
@@ -100,7 +97,6 @@ namespace{
     
     void connection_stop(frame::mpipc::ConnectionContext& _rctx)
     {
-        idbg(_rctx.recipientId() << " error: " << _rctx.error().message()<<" rampup = "<<ctx.ramp_down_connection_count<<" rampdawn = "<<ctx.ramp_down_connection_count);
         if(_rctx.isConnectionActive()){
             unique_lock<mutex> lock(ctx.mtx);
             SOLID_ASSERT(_rctx.device());
@@ -108,7 +104,6 @@ namespace{
             if(ctx.ramp_down_connection_count == 0){
                 cout<<"Done: msgcnt = "<<ctx.messages_transferred<<" tokencnt = "<<ctx.tokens_transferred<<endl;
                 _exit(0);
-                idbg("NOTIFY STOPPING");
                 ctx.cnd.notify_one();
             }
         }
@@ -233,7 +228,6 @@ namespace{
     }
     
     void client_stop(const bool _wait){
-        edbg("STOPPING");
         ctx.manager.stop();
         ctx.scheduler.stop(_wait);
     }
