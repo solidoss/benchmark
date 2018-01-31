@@ -32,7 +32,7 @@ using AtomicSizeT = std::atomic<size_t>;
 namespace{
     
     struct Context{
-        Context():ipcservice(manager), ramp_up_connection_count(0), ramp_down_connection_count(0){
+        Context():ipcservice(manager), ramp_up_connection_count(0), ramp_down_connection_count(0), messages_transferred(0), tokens_transferred(0){
             
 #ifdef SOLID_HAS_DEBUG
             Debug::the().levelMask("ew");
@@ -55,6 +55,9 @@ namespace{
         size_t                      ramp_down_connection_count;
         size_t                      loop_count;
         size_t                      connection_count;
+        bool                        print_response;
+        AtomicSizeT                 messages_transferred;
+        AtomicSizeT                 tokens_transferred;
     } ctx;
     
     template <class M>
@@ -70,7 +73,19 @@ namespace{
         
         SOLID_CHECK(_rrecv_msg_ptr->str.empty() && _rrecv_msg_ptr->vec.size());
         
+        
         auto   &con_val = *_rctx.any().cast<pair<size_t, size_t>>();
+        
+        ++ctx.messages_transferred;
+        ctx.tokens_transferred += _rrecv_msg_ptr->vec.size();
+        
+        if(ctx.print_response){
+            cout<<con_val.first<<':'<<con_val.second<<' ';
+            for(const auto &token: _rrecv_msg_ptr->vec){
+                cout<<'['<<token<<']'<<' ';
+            }
+            cout<<endl;
+        }
         --con_val.second;
         idbg(_rctx.connectionId()<<" idx = "<<con_val.first<<" loops = "<<con_val.second);
         if(con_val.second){
@@ -91,6 +106,8 @@ namespace{
             SOLID_ASSERT(_rctx.device());
             --ctx.ramp_down_connection_count;
             if(ctx.ramp_down_connection_count == 0){
+                cout<<"Done: msgcnt = "<<ctx.messages_transferred<<" tokencnt = "<<ctx.tokens_transferred<<endl;
+                _exit(0);
                 idbg("NOTIFY STOPPING");
                 ctx.cnd.notify_one();
             }
@@ -117,7 +134,13 @@ namespace{
     
 }//namespace
     
-    int client_start(const bool _secure, const bool _compress, const std::string &_connect_addr, const std::string &_default_port, const size_t _connection_count, const size_t _loop_count, const std::string &_text_file){
+    int client_start(
+        const bool _secure, const bool _compress,
+        const std::string &_connect_addr,
+        const std::string &_default_port,
+        const size_t _connection_count, const size_t _loop_count,
+        const std::string &_text_file,
+        const bool _print_response){
         
         {
             ifstream ifs(_text_file);
@@ -195,6 +218,7 @@ namespace{
             ctx.loop_count = _loop_count;
             ctx.ramp_down_connection_count = _connection_count;
             ctx.connection_count = _connection_count;
+            ctx.print_response = _print_response;
             return 0;
         }
     }

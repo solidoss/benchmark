@@ -25,6 +25,7 @@ struct Parameters{
     const string            default_port;
     bool                    secure;
     bool                    compress;
+    bool                    print_response;
     string                  connect_host;
     size_t                  loop_count;
     size_t                  connection_count;
@@ -47,7 +48,7 @@ int main(int argc, char *argv[]){
     
     signal(SIGPIPE, SIG_IGN);
     
-    int rv = bench::client_start(p.secure, p.compress, p.connect_host, p.default_port, p.connection_count, p.loop_count, p.text_file_path);
+    int rv = bench::client_start(p.secure, p.compress, p.connect_host, p.default_port, p.connection_count, p.loop_count, p.text_file_path, p.print_response);
     
     if(rv >= 0){
         //cout<<"Success"<<endl;
@@ -77,6 +78,7 @@ bool parseArguments(Parameters &_par, int argc, char *argv[]){
             ("connect-host,c", value<std::string>(&_par.connect_host)->default_value("localhost:" + _par.default_port), "IPC Connect Host")
             ("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(true), "Use SSL to secure communication")
             ("compress", value<bool>(&_par.compress)->implicit_value(true)->default_value(true), "Use Snappy to compress communication")
+            ("print-response", value<bool>(&_par.print_response)->implicit_value(true)->default_value(false), "Use Snappy to compress communication")
             ("loop-count,l", value<size_t>(&_par.loop_count)->default_value(1000), "Roundtrip count per connection")
             ("connection-count,N", value<size_t>(&_par.connection_count)->default_value(100), "Connection count")
             ("text_file,t", value<string>(&_par.text_file_path)->default_value("test_text.txt"), "Path to text file")

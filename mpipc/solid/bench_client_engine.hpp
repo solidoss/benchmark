@@ -11,7 +11,8 @@ namespace bench{
         const std::string &_defaul_port,
         const size_t _connection_count,
         const size_t _loop_count,
-        const std::string &_text_file_path
+        const std::string &_text_file_path,
+        const bool _print_response
     );
     void client_wait();
     void client_stop(const bool _wait = true);
