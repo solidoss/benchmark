@@ -1,7 +1,5 @@
 #pragma once
-#include <vector>
 #include <string>
-
 
 namespace bench_client{
     int start(
@@ -14,6 +12,7 @@ namespace bench_client{
         const std::string &_text_file_path,
         const bool _print_response
     );
+    
     void wait();
     void stop(const bool _wait = true);
-}//namespace bench
+}

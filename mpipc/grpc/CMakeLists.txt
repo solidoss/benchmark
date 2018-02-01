@@ -66,7 +66,7 @@ add_custom_command(
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 
-add_executable(grpc_bench_server "bench_server.cpp"
+add_executable(grpc_bench_server "bench_server_main.cpp" "bench_server_engine.hpp" "bench_server_engine.cpp"
     ${bench_proto_srcs}
     ${bench_grpc_srcs})
 
@@ -76,7 +76,7 @@ target_link_libraries(grpc_bench_server
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY})
     
-add_executable(grpc_bench_client "bench_client.cpp"
+add_executable(grpc_bench_client "bench_client_main.cpp" "bench_client_engine.hpp" "bench_client_engine.cpp"
     ${bench_proto_srcs}
     ${bench_grpc_srcs})
     
@@ -87,3 +87,24 @@ target_link_libraries(grpc_bench_client
     gRPC::grpc++_unsecure
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY})
+    
+add_executable(grpc_bench_test "bench_test_main.cpp" "bench_client_engine.hpp" "bench_client_engine.cpp" "bench_server_engine.hpp" "bench_server_engine.cpp"
+    ${bench_proto_srcs}
+    ${bench_grpc_srcs})
+    
+add_dependencies(grpc_bench_test grpc_bench_certs bench_text_files)
+
+target_link_libraries(grpc_bench_test
+    protobuf::libprotobuf
+    gRPC::grpc++_unsecure
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY})
+
+    ## Test suite ==============================================================
+
+add_test(NAME GrpcPlainNoComp_100_1 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_1.txt)
+add_test(NAME GrpcPlainNoComp_100_2 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_2.txt)
+add_test(NAME GrpcPlainNoComp_100_3 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_3.txt)
+add_test(NAME GrpcPlainNoComp_100_4 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_4.txt)
+add_test(NAME GrpcPlainNoComp_100_5 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_5.txt)
+add_test(NAME GrpcPlainNoComp_100_6 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_6.txt)

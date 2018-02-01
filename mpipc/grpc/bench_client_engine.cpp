@@ -1,7 +1,7 @@
-#include <iostream>
-#include <string>
-#include "boost/program_options.hpp"
+#include "bench_client_engine.hpp"
 
+#include <string>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -27,26 +27,7 @@ using AtomicSizeT = std::atomic<size_t>;
 
 using namespace std;
 
-//-----------------------------------------------------------------------------
-//      Parameters
-//-----------------------------------------------------------------------------
-struct Parameters{
-    Parameters():default_port("5555"){}
-
-    const string            default_port;
-    bool                    secure;
-    bool                    compress;
-    bool                    print_response;
-    string                  connect_host;
-    size_t                  loop_count;
-    size_t                  connection_count;
-    string                  text_file_path;
-};
-
-//-----------------------------------------------------------------------------
-
-bool parseArguments(Parameters &_par, int argc, char *argv[]);
-
+namespace{
 
 using StringVectorT = std::vector<std::string>;
 
@@ -54,9 +35,18 @@ class TokenizerClient {
 public:
     explicit TokenizerClient():messages_transferred(0), tokens_transferred(0) {}
     
-    int start(const Parameters &_rp){
+    int start(
+        const bool _secure, 
+        const bool _compress,
+        const std::string &_connect_addr,
+        const std::string &_defaul_port,
+        const size_t _connection_count,
+        const size_t _loop_count,
+        const std::string &_text_file_path,
+        const bool _print_response
+    ){
         {
-            ifstream ifs(_rp.text_file_path);
+            ifstream ifs(_text_file_path);
             if(ifs){
                 while(!ifs.eof()){
                     line_vec_.emplace_back();
@@ -71,11 +61,11 @@ public:
         }
         
         //create the channels
-        call_count = _rp.connection_count;
-        for(size_t i = 0; i < _rp.connection_count; ++i){
+        call_count = _connection_count;
+        for(size_t i = 0; i < _connection_count; ++i){
             AsyncClientCall* call = new AsyncClientCall;
-            call->stub = Tokenizer::NewStub(grpc::CreateChannel(_rp.connect_host, grpc::InsecureChannelCredentials()));
-            call->loop_count = _rp.loop_count;
+            call->stub = Tokenizer::NewStub(grpc::CreateChannel(_connect_addr, grpc::InsecureChannelCredentials()));
+            call->loop_count = _loop_count;
             call->index = i;
             call->msg.set_text(line_vec_[i % line_vec_.size()]);
             call->context = new ClientContext;
@@ -84,7 +74,7 @@ public:
             call->response_reader->Finish(&call->msg, &call->status, (void*)call);
         }
         
-        print_response = _rp.print_response;
+        print_response = _print_response;
         return 0;
     }
     
@@ -169,48 +159,30 @@ public:
     AtomicSizeT     tokens_transferred;
 };
 
-//-----------------------------------------------------------------------------
-//      main
-//-----------------------------------------------------------------------------
-int main(int argc, char *argv[]){
-    Parameters p;
+std::unique_ptr<TokenizerClient>    client_ptr;
 
-    if(parseArguments(p, argc, argv)) return 0;
-    
-    TokenizerClient tc;
-    if(tc.start(p) == 0){
-        tc.run();
-    }
-    
-    return 0;
+}//namespace
+
+namespace bench_client{
+int start(
+    const bool _secure, 
+    const bool _compress,
+    const std::string &_connect_addr,
+    const std::string &_defaul_port,
+    const size_t _connection_count,
+    const size_t _loop_count,
+    const std::string &_text_file_path,
+    const bool _print_response
+){
+    client_ptr.reset(new TokenizerClient);
+    return client_ptr->start(_secure, _compress, _connect_addr, _defaul_port, _connection_count, _loop_count, _text_file_path, _print_response);
 }
 
-//-----------------------------------------------------------------------------
-
-bool parseArguments(Parameters &_par, int argc, char *argv[]){
-    using namespace boost::program_options;
-    try{
-        options_description desc("Bench server");
-        desc.add_options()
-            ("help,h", "List program options")
-            ("connect-host,c", value<std::string>(&_par.connect_host)->default_value("localhost:" + _par.default_port), "gRPC Connect Host")
-            ("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(true), "Secure communication")
-            ("compress", value<bool>(&_par.compress)->implicit_value(true)->default_value(true), "Compress communication")
-            ("loop-count,l", value<size_t>(&_par.loop_count)->default_value(1000), "Roundtrip count per connection")
-            ("connection-count,N", value<size_t>(&_par.connection_count)->default_value(100), "Connection count")
-            ("text_file,t", value<string>(&_par.text_file_path)->default_value("test_text.txt"), "Path to text file")
-            ("print-response", value<bool>(&_par.print_response)->implicit_value(true)->default_value(false), "Prints the response")
-        ;
-        variables_map vm;
-        store(parse_command_line(argc, argv, desc), vm);
-        notify(vm);
-        if (vm.count("help")) {
-            cout << desc << "\n";
-            return true;
-        }
-        return false;
-    }catch(exception& e){
-        cout << e.what() << "\n";
-        return true;
-    }
+void wait(){
+    client_ptr->run();
 }
+
+void stop(const bool _wait){
+    
+}
+}//namespace bench

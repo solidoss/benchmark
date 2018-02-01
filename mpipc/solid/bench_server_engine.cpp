@@ -20,7 +20,7 @@ using namespace std;
 
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor>;
 
-namespace bench{
+namespace bench_server{
     
 namespace{
     struct Context{
@@ -35,7 +35,9 @@ namespace{
         
         frame::Manager              manager;
         frame::mpipc::ServiceT      ipcservice;
-    } ctx;
+    };
+    
+    unique_ptr<Context> ctx;
     
     template <class M>
     void complete_message(
@@ -44,6 +46,7 @@ namespace{
         std::shared_ptr<M>&              _rrecv_msg_ptr,
         ErrorConditionT const&           _rerror)
     {
+        idbg("received message on server");
         SOLID_CHECK(not _rerror);
 
         if (_rrecv_msg_ptr) {
@@ -74,10 +77,12 @@ namespace{
     
 }//namespace
     
-    int server_start(const bool _secure, const bool _compress, std::string &&_listen_addr){
+    int start(const bool _secure, const bool _compress, const std::string &_listen_addr){
         ErrorConditionT     err;
         
-        err = ctx.scheduler.start(1);
+        ctx.reset(new Context);
+        
+        err = ctx->scheduler.start(1);
 
         if (err) {
             return -1;
@@ -85,13 +90,15 @@ namespace{
         
         {
             auto                        proto = frame::mpipc::serialization_v1::Protocol::create();
-            frame::mpipc::Configuration cfg(ctx.scheduler, proto);
+            frame::mpipc::Configuration cfg(ctx->scheduler, proto);
 
             bench::ProtoSpecT::setup<MessageSetup>(*proto);
 
-            cfg.server.listener_address_str = std::move(_listen_addr);
+            cfg.server.listener_address_str = _listen_addr;
 
             cfg.server.connection_start_state = frame::mpipc::ConnectionState::Active;
+            cfg.connection_recv_buffer_start_capacity_kb = 64;
+            cfg.connection_send_buffer_start_capacity_kb = 64;
             
             if(_secure){
                 frame::mpipc::openssl::setup_server(
@@ -110,19 +117,19 @@ namespace{
                 frame::mpipc::snappy::setup(cfg);
             }
 
-            err = ctx.ipcservice.reconfigure(std::move(cfg));
+            err = ctx->ipcservice.reconfigure(std::move(cfg));
 
             if (err) {
-                ctx.manager.stop();
+                ctx->manager.stop();
                 return -2;
             }
             
-            return ctx.ipcservice.configuration().server.listenerPort();
+            return ctx->ipcservice.configuration().server.listenerPort();
         }
     }
     
-    void server_stop(const bool _wait){
-        ctx.manager.stop();
-        ctx.scheduler.stop(_wait);
+    void stop(const bool _wait){
+        ctx->manager.stop();
+        ctx->scheduler.stop(_wait);
     }
 }//namespace bench

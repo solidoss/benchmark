@@ -1,11 +1,9 @@
-#include <iostream>
-#include "boost/program_options.hpp"
-#include <memory>
-#include <string>
-#include <thread>
-
+#include "bench_server_engine.hpp"
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
+#include <thread>
+#include <sstream>
+#include <unistd.h>
 
 #include "bench.grpc.pb.h"
 
@@ -20,22 +18,7 @@ using bench::Tokenizer;
 
 using namespace std;
 
-//-----------------------------------------------------------------------------
-//      Parameters
-//-----------------------------------------------------------------------------
-struct Parameters{
-    Parameters():listener_port("0"), listener_addr("0.0.0.0"){}
-
-    bool                    secure;
-    bool                    compress;
-    string                  listener_port;
-    string                  listener_addr;
-};
-
-//-----------------------------------------------------------------------------
-
-bool parseArguments(Parameters &_par, int argc, char *argv[]);
-
+namespace {
 class ServerImpl final {
 public:
     ~ServerImpl() {
@@ -45,8 +28,8 @@ public:
     }
 
     // There is no shutdown handling in this code.
-    void Run(const Parameters &_rp) {
-        std::string server_address(_rp.listener_addr + ':' + _rp.listener_port);
+    void Run(const bool _secure, const bool _compress, const std::string &_listen_addr) {
+        std::string server_address(_listen_addr);
 
         ServerBuilder builder;
         // Listen on the given address without any authentication mechanism.
@@ -164,42 +147,28 @@ private:
     std::unique_ptr<Server> server_;
 };
 
+}//namespace
 
-int main(int argc, char* argv[]){
-    Parameters p;
 
-    if(parseArguments(p, argc, argv)) return 0;
-    
-    ServerImpl server;
-    server.Run(p);
-    
-    return 0;
+namespace bench_server{
+int start(const bool _secure, const bool _compress, const std::string &_listen_addr){
+    thread thr{
+        [](const bool _secure, const bool _compress, const std::string &_listen_addr){
+            ServerImpl server;
+            server.Run(_secure, _compress, _listen_addr);
+        },
+        _secure,
+        _compress,
+        _listen_addr
+    };
+    thr.detach();
+    return 1;
 }
 
-
-//-----------------------------------------------------------------------------
-
-bool parseArguments(Parameters &_par, int argc, char *argv[]){
-    using namespace boost::program_options;
-    try{
-        options_description desc("Bench server");
-        desc.add_options()
-            ("help,h", "List program options")
-            ("listen-port,p", value<std::string>(&_par.listener_port)->default_value("5555"), "gRPC Listen port")
-            ("listen-addr,a", value<std::string>(&_par.listener_addr)->default_value("0.0.0.0"), "gRPC Listen address")
-            ("secure,s", value<bool>(&_par.secure)->implicit_value(true)->default_value(true), "Secure communication")
-            ("compress", value<bool>(&_par.compress)->implicit_value(true)->default_value(true), "Compress communication")
-        ;
-        variables_map vm;
-        store(parse_command_line(argc, argv, desc), vm);
-        notify(vm);
-        if (vm.count("help")) {
-            cout << desc << "\n";
-            return true;
-        }
-        return false;
-    }catch(exception& e){
-        cout << e.what() << "\n";
-        return true;
+void stop(const bool _wait){
+    if(_wait){
+        _exit(0);
     }
 }
+
+}//namespace bench
