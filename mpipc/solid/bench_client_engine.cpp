@@ -86,13 +86,14 @@ namespace{
             cout<<endl;
         }
         
-        --con_val.second;
-        
-        if(con_val.second){
+        if(con_val.second > 1){
+            --con_val.second;
             _rsent_msg_ptr->str = ctx->line_vec[con_val.first % ctx->line_vec.size()];
             ++con_val.first;
             
             _rctx.service().sendMessage(_rctx.recipientId(), std::move(_rsent_msg_ptr), {frame::mpipc::MessageFlagsE::WaitResponse});
+        }else if(con_val.second == 1){
+            --con_val.second;
         }else{
             _rctx.service().closeConnection(_rctx.recipientId());
         }
@@ -117,8 +118,9 @@ namespace{
         idbg(_rctx.recipientId());
         const size_t crt_idx = ctx->ramp_up_connection_count.fetch_add(1);
         if(crt_idx < ctx->connection_count){
-            _rctx.any() = make_pair(crt_idx + 1, ctx->loop_count);
+            _rctx.any() = make_pair(crt_idx + 2, ctx->loop_count - 1);
             _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[crt_idx % ctx->line_vec.size()]), {frame::mpipc::MessageFlagsE::WaitResponse});
+            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]), {frame::mpipc::MessageFlagsE::WaitResponse});
         }
     }
 
