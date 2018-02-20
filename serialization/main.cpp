@@ -14,6 +14,7 @@
 #include "cereal/record.hpp"
 #include "data.hpp"
 #include "solid/record.hpp"
+#include "solid_v2/record.hpp"
 
 using namespace std;
 
@@ -110,7 +111,10 @@ void solid_serialization_test(size_t iterations)
 
     SerializerT   s;
     DeserializerT d;
-
+    
+    std::cout<<"sizeof serializer: "<<sizeof(s)<<std::endl;
+    std::cout<<"sizeof deserializer: "<<sizeof(d)<<std::endl;
+    
     std::string serialized;
 
     to_string(s, r1, serialized);
@@ -147,10 +151,55 @@ void solid_serialization_test(size_t iterations)
               << std::endl;
 }
 
+void solid_serialization_v2_test(size_t iterations)
+{
+    using namespace solid_v2_test;
+
+    Record r1, r2;
+
+    for (size_t i = 0; i < kIntegers.size(); i++) {
+        r1.ids.push_back(kIntegers[i]);
+    }
+
+    for (size_t i = 0; i < kStringsCount; i++) {
+        r1.strings.push_back(kStringValue);
+    }
+
+    SerializerT   s;
+    DeserializerT d;
+    
+    std::cout<<"sizeof serializer: "<<sizeof(s)<<std::endl;
+    std::cout<<"sizeof deserializer: "<<sizeof(d)<<std::endl;
+
+    std::string serialized;
+
+    to_string(s, r1, serialized);
+    from_string(d, r2, serialized);
+
+    if (r1 != r2) {
+        throw std::logic_error("solid's case: deserialization failed");
+    }
+
+    std::cout << "solid: size = " << serialized.size() << " bytes" << std::endl;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    //char buf[256];
+    for (size_t i = 0; i < iterations; i++) {
+        serialized.clear();
+        to_string(s, r1, serialized);
+        from_string(d, r2, serialized);
+    }
+    auto finish   = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+
+    std::cout << "solid: time = " << duration << " milliseconds" << std::endl
+              << std::endl;
+}
+
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        std::cout << "usage: " << argv[0] << " N [boost solid cereal]";
+        std::cout << "usage: " << argv[0] << " N [boost solid solid_v2 cereal]";
         std::cout << std::endl
                   << std::endl;
         std::cout << "arguments: " << std::endl;
@@ -188,6 +237,10 @@ int main(int argc, char** argv)
 
         if (names.empty() || names.find("solid") != names.end()) {
             solid_serialization_test(iterations);
+        }
+        
+        if (names.empty() || names.find("solid_v2") != names.end()) {
+            solid_serialization_v2_test(iterations);
         }
 
         if (names.empty() || names.find("cereal") != names.end()) {

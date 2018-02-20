@@ -4,12 +4,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(${CMAKE_SOURCE_DIR}/cmake/build_cereal.cmake)
 
-add_executable(benchmark main.cpp boost/record.cpp solid/record.cpp cereal/record.cpp)
+add_executable(benchmark main.cpp boost/record.cpp solid/record.cpp cereal/record.cpp solid_v2/record.cpp)
 
 add_dependencies(benchmark build_cereal)
 
 target_link_libraries(benchmark
     solid_serialization
+    solid_serialization_v2
     solid_utility
     solid_system
     ${Boost_SERIALIZATION_LIBRARY}
