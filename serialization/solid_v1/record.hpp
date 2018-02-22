@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#include "solid/serialization/binary.hpp"
+#include "solid/serialization/v1/binary.hpp"
 
 namespace solid_test {
 

@@ -13,7 +13,7 @@
 #include "boost/record.hpp"
 #include "cereal/record.hpp"
 #include "data.hpp"
-#include "solid/record.hpp"
+#include "solid_v1/record.hpp"
 #include "solid_v2/record.hpp"
 
 using namespace std;
