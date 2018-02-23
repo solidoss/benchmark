@@ -30,7 +30,7 @@ public:
     }
 
     template <class S>
-    void solidSerialize(S& _s)
+    void solidSerializeV1(S& _s)
     {
         _s.pushContainer(ids, "Record::ids");
         _s.pushContainer(strings, "Record::strings");
