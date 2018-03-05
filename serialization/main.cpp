@@ -165,8 +165,8 @@ void solid_serialization_v2_test(size_t iterations)
         r1.strings.push_back(kStringValue);
     }
 
-    SerializerT   s;
-    DeserializerT d;
+    SerializerT   s = type_map().createSerializer();
+    DeserializerT d = type_map().createDeserializer();
     
     std::cout<<"sizeof serializer: "<<sizeof(s)<<std::endl;
     std::cout<<"sizeof deserializer: "<<sizeof(d)<<std::endl;

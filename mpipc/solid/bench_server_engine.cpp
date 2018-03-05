@@ -67,11 +67,10 @@ namespace{
         }
     }
 
-    template <typename T>
     struct MessageSetup {
-        void operator()(frame::mpipc::serialization_v1::Protocol& _rprotocol, const size_t _protocol_idx, const size_t _message_idx)
+        void operator()(bench::ProtocolT& _rprotocol, TypeToType<bench::Message> _t2t, const bench::ProtocolT::TypeIdT& _rtid)
         {
-            _rprotocol.registerType<T>(complete_message<T>, _protocol_idx, _message_idx);
+            _rprotocol.registerMessage<bench::Message>(complete_message<bench::Message>, _rtid);
         }
     };
     
@@ -89,10 +88,10 @@ namespace{
         }
         
         {
-            auto                        proto = frame::mpipc::serialization_v1::Protocol::create();
+            auto                        proto = bench::ProtocolT::create();
             frame::mpipc::Configuration cfg(ctx->scheduler, proto);
 
-            bench::ProtoSpecT::setup<MessageSetup>(*proto);
+            bench::protocol_setup(MessageSetup(), *proto);
 
             cfg.server.listener_address_str = _listen_addr;
 

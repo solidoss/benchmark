@@ -35,7 +35,7 @@ add_library(bench_server_engine bench_protocol.hpp bench_server_engine.hpp  benc
 target_link_libraries(bench_server_engine
     solid_frame_mpipc
     solid_frame_aio_openssl
-    solid_serialization
+    solid_serialization_v2
     ${SNAPPY_LIB}
 )
 add_dependencies(bench_server_engine bench_certs build_snappy)
@@ -57,7 +57,7 @@ add_library(bench_client_engine bench_protocol.hpp bench_client_engine.hpp  benc
 target_link_libraries(bench_client_engine
     solid_frame_mpipc
     solid_frame_aio_openssl
-    solid_serialization
+    solid_serialization_v2
     ${SNAPPY_LIB}
 )
 add_dependencies(bench_client_engine bench_certs bench_text build_snappy)
