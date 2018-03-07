@@ -235,7 +235,7 @@ int main(int argc, char** argv)
             boost_serialization_test(iterations);
         }
 
-        if (names.empty() || names.find("solid") != names.end()) {
+        if (names.empty() || names.find("solid_v1") != names.end()) {
             solid_serialization_test(iterations);
         }
         
