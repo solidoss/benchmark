@@ -32,12 +32,7 @@ namespace{
     
     struct Context{
         Context():ipcservice(manager), ramp_up_connection_count(0), ramp_down_connection_count(0), messages_transferred(0), tokens_transferred(0){
-            
-#ifdef SOLID_HAS_DEBUG
-            Debug::the().levelMask("ew");
-            Debug::the().moduleMask("any frame_mpipc");
-            Debug::the().initStdErr(false, nullptr);
-#endif
+            solid::log_start(std::cerr, {"\\*:EW", "solid::frame::mpipc:EW"});
             
         }
         AioSchedulerT               scheduler;
@@ -68,7 +63,7 @@ namespace{
         std::shared_ptr<M>&              _rrecv_msg_ptr,
         ErrorConditionT const&           _rerror)
     {
-        idbg("message on client");
+        solid_dbg(generic_logger, Info, "message on client");
         SOLID_CHECK(not _rerror);
         SOLID_CHECK(_rrecv_msg_ptr && _rsent_msg_ptr);
         SOLID_CHECK(_rrecv_msg_ptr->str.empty() && _rrecv_msg_ptr->vec.size());
@@ -115,7 +110,7 @@ namespace{
 
     void connection_start(frame::mpipc::ConnectionContext& _rctx)
     {
-        idbg(_rctx.recipientId());
+        solid_dbg(generic_logger, Info, _rctx.recipientId());
         const size_t crt_idx = ctx->ramp_up_connection_count.fetch_add(1);
         if(crt_idx < ctx->connection_count){
             _rctx.any() = make_pair(crt_idx + 2, ctx->loop_count - 1);

@@ -1,4 +1,4 @@
-#include "solid/system/debug.hpp"
+#include "solid/system/log.hpp"
 #include "solid/frame/manager.hpp"
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
@@ -25,11 +25,7 @@ namespace bench_server{
 namespace{
     struct Context{
         Context():ipcservice(manager){
-#ifdef SOLID_HAS_DEBUG
-            Debug::the().levelMask("ew");
-            Debug::the().moduleMask("any");
-            Debug::the().initStdErr(false, nullptr);
-#endif
+            solid::log_start(std::cerr, {"\\*:EW"});
         }
         AioSchedulerT               scheduler;
         
@@ -46,7 +42,7 @@ namespace{
         std::shared_ptr<M>&              _rrecv_msg_ptr,
         ErrorConditionT const&           _rerror)
     {
-        idbg("received message on server");
+        solid_log(generic_logger, Info, "received message on server");
         SOLID_CHECK(not _rerror);
 
         if (_rrecv_msg_ptr) {
