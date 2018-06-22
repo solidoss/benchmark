@@ -31,7 +31,7 @@ using AtomicSizeT = std::atomic<size_t>;
 namespace{
     
     struct Context{
-        Context():ipcservice(manager), ramp_up_connection_count(0), ramp_down_connection_count(0), messages_transferred(0), tokens_transferred(0){
+        Context():ipcservice(manager), fwp(WorkPoolConfiguration()), resolver(fwp), ramp_up_connection_count(0), ramp_down_connection_count(0), messages_transferred(0), tokens_transferred(0){
             solid::log_start(std::cerr, {"\\*:EW", "solid::frame::mpipc:EW"});
             
         }
@@ -39,6 +39,7 @@ namespace{
         
         frame::Manager              manager;
         frame::mpipc::ServiceT      ipcservice;
+        FunctionWorkPool            fwp;
         frame::aio::Resolver        resolver;
         
         StringVectorT               line_vec;
@@ -160,8 +161,6 @@ namespace{
             return -2;
         }
         
-        err = ctx->resolver.start(1);
-
         if (err) {
             return -3;
         }
