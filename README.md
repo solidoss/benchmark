@@ -41,6 +41,16 @@ $ mkdir -p c-ares-1.14.0/.build
 $ cd c-ares-1.14.0/.build
 $ cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=~/home/external64
 $ cmake --build . --config release --target install
+# build zlib
+$ cd ~/home/grpc/third_party/zlib
+$ mkdir .build
+$ cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=~/home/external64
+$ cmake --build . --config release --target install
+# build protobuf
+$ cd ~/home/grpc/third_party/protobuf/cmake
+$ mkdir .build
+$  cmake .. -G"Visual Studio 15 2017 Win64" -Dprotobuf_MSVC_STATIC_RUNTIME=false -DCMAKE_BUILD_TYPE=Release -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=~/home/external64/
+$ cmake --build . --config release --target install
 $ cd ~/home/grpc/.build
 $ rm -rf *
 $ cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=~/home/external64
@@ -54,4 +64,10 @@ $ cmake --build . --config release --target install
 
 ```bash
  cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=release -DEXTERNAL_PATH=~/home/external64 -DSolidFrame_DIR=~/home/solidframe/build/release ../../
+ ```
+
+After succesfull build, may need to copy the needed dlls to grpc test folder
+```bash
+$ cd mpipc/grpc/Release
+$ cp "/c/Program Files/Common Files/microsoft shared/ClickToRun/"api-ms-win-crt-*-l1-1-0.dll .
  ```
