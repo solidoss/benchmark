@@ -80,6 +80,10 @@ if(CMAKE_SYSTEM MATCHES "Linux*")
     set(SYS_DYNAMIC_LOAD_LIB dl)
 endif(CMAKE_SYSTEM MATCHES "Linux*")
 
+if(CMAKE_SYSTEM MATCHES "Windows*")
+    message("Detected system ON_WINDOWS")
+    add_definitions(-D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00)
+endif(CMAKE_SYSTEM MATCHES "Windows*")
 #-----------------------------------------------------------------
 # Global include directories
 #-----------------------------------------------------------------

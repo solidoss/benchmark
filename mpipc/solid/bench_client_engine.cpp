@@ -1,13 +1,13 @@
+#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
+#include "solid/frame/mpipc/mpipcservice.hpp"
+#include "solid/frame/mpipc/mpipcconfiguration.hpp"
+#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
+
 #include "solid/frame/manager.hpp"
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
 
 #include "solid/frame/aio/aioresolver.hpp"
-
-#include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
-#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
 #include <atomic>
 #include <mutex>
@@ -65,7 +65,7 @@ namespace{
         ErrorConditionT const&           _rerror)
     {
         solid_dbg(generic_logger, Info, "message on client");
-        SOLID_CHECK(not _rerror);
+        SOLID_CHECK(!_rerror);
         SOLID_CHECK(_rrecv_msg_ptr && _rsent_msg_ptr);
         SOLID_CHECK(_rrecv_msg_ptr->str.empty() && _rrecv_msg_ptr->vec.size());
         
@@ -222,7 +222,7 @@ namespace{
     void wait(){
         unique_lock<mutex> lock(ctx->mtx);
 
-        if (not ctx->cnd.wait_for(lock, std::chrono::seconds(1000), []() { return ctx->ramp_down_connection_count == 0; })) {
+        if (!ctx->cnd.wait_for(lock, std::chrono::seconds(1000), []() { return ctx->ramp_down_connection_count == 0; })) {
             SOLID_THROW("Process is taking too long.");
         }
         

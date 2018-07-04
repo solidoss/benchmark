@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <signal.h>
+#include "solid/system/common.hpp"
 #include "boost/program_options.hpp"
 
 #include "bench_server_engine.hpp"
@@ -40,8 +41,9 @@ int main(int argc, char *argv[]){
     Parameters p;
 
     if(parseArguments(p, argc, argv)) return 0;
-    
+#ifndef SOLID_ON_WINDOWS 
     signal(SIGPIPE, SIG_IGN);
+#endif
     
     int listen_port = bench_server::start(p.secure, p.compress, std::move(p.listener_addr + ':' + p.listener_port));
     

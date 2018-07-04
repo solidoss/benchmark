@@ -1,4 +1,5 @@
 
+#include "solid/system/common.hpp"
 #include <iostream>
 #include <string>
 #include <signal.h>
@@ -45,8 +46,9 @@ int main(int argc, char *argv[]){
     Parameters p;
 
     if(parseArguments(p, argc, argv)) return 0;
-    
+#ifndef SOLID_ON_WINDOWS
     signal(SIGPIPE, SIG_IGN);
+#endif
     
     int rv = bench_client::start(p.secure, p.compress, p.connect_host, p.default_port, p.connection_count, p.loop_count, p.text_file_path, p.print_response);
     

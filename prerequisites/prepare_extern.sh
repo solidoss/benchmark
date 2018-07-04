@@ -5,11 +5,11 @@ printUsage()
     echo
     echo "Usage:"
     echo
-    echo "./prepare_extern.sh [--all] [--boost] [--openssl] [--force-download] [--debug] [-h|--help]"
+    echo "./prepare_extern.sh [--all] [--boost] [--openssl] [--boringssl] [--force-download] [--debug] [--64bit] [-h|--help]"
     echo
     echo "Examples:"
     echo
-    echo "Build SolidFrame dependencies:"
+    echo "Build all external dependencies:"
     echo "$ ./prepare_extern.sh"
     echo
     echo "Build all supported dependencies:"
@@ -26,30 +26,28 @@ printUsage()
     echo
 }
 
-BOOST_ADDR="http://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.tar.bz2"
-OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0g.tar.gz"
+BOOST_ADDR="http://sourceforge.net/projects/boost/files/boost/1.67.0/boost_1_67_0.tar.bz2"
+OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0h.tar.gz"
+CARES_ADDR="https://c-ares.haxx.se/download/c-ares-1.14.0.tar.gz"
 
 SYSTEM=
+BIT64=
 
 downloadArchive()
 {
     local url="$1"
     local arc="$(basename "${url}")"
     echo "Downloading: [$arc] from [$url]"
-    #wget --no-check-certificate -O $arc $url
-    #wget -O $arc $url
     curl -L -O $url
 }
 
 extractTarBz2()
 {
-#    bzip2 -dc "$1" | tar -xf -
     tar -xjf "$1"
 }
 
 extractTarGz()
 {
-#    gzip -dc "$1" | tar -xf -
     tar -xzf "$1"
 }
 
@@ -92,9 +90,9 @@ buildBoost()
     
     
     if [ $DEBUG ] ; then
-        VARIANT_BUILD="variant=debug"
+        VARIANT_BUILD="debug"
     else
-        VARIANT_BUILD="variant=release"
+        VARIANT_BUILD="release"
     fi
     
     
@@ -105,6 +103,15 @@ buildBoost()
         sh bootstrap.sh
         ./b2 --layout=system  --prefix="$EXT_DIR" --exec-prefix="$EXT_DIR" link=static threading=multi $VARIANT_BUILD install
         echo
+    elif    [[ "$SYSTEM" =~ "MINGW" ]]; then
+        if [ $BIT64 = true ]; then
+            BOOST_ADDRESS_MODEL="64"
+        else
+            BOOST_ADDRESS_MODEL="32"
+        fi
+        
+        ./bootstrap.bat vc141
+        ./b2 --abbreviate-paths --hash address-model="$BOOST_ADDRESS_MODEL" variant="$VARIANT_BUILD" link=static threading=multi --prefix="$EXT_DIR" install
     else
         sh bootstrap.sh
         ./b2 --layout=system  --prefix="$EXT_DIR" --exec-prefix="$EXT_DIR" link=static threading=multi $VARIANT_BUILD install
@@ -174,6 +181,14 @@ buildOpenssl()
         else
             ./Configure --prefix="$EXT_DIR" --openssldir="ssl_" darwin64-x86_64-cc
         fi
+    elif    [[ "$SYSTEM" =~ "MINGW" ]]; then
+        if [ $BIT64 = true ]; then
+            OPENSSL_TARGET="VC-WIN64A"
+        else
+            OPENSSL_TARGET="VC-WIN32"
+        fi
+
+        wperl Configure $OPENSSL_TARGET --prefix="$EXT_DIR" --openssldir="ssl_"  no-shared
     else
         if [ $DEBUG ] ; then
             ./config --prefix="$EXT_DIR" --openssldir="ssl_"
@@ -181,8 +196,86 @@ buildOpenssl()
             ./config --prefix="$EXT_DIR" --openssldir="ssl_"
         fi
     fi
+    if    [[ "$SYSTEM" =~ "MINGW" ]]; then
+        nmake && nmake install_sw
+    else
+        make && make install_sw
+    fi
     
-    make && make install_sw
+    cd ..
+    
+    echo "Copy test certificates to ssl_ dir..."
+    
+    cp $DIR_NAME/demos/tunala/*.pem ssl_/certs/.
+    
+    echo
+    echo "Done $WHAT!"
+    echo
+}
+
+function buildCAres
+{
+    WHAT="c-ares"
+    ADDR_NAME=$CARES_ADDR
+    echo
+    echo "Building $WHAT..."
+    echo
+
+    OLD_DIR=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Cleanup previous builds..."
+    echo
+
+    
+    echo
+    echo "Prepare the $WHAT archive..."
+    echo
+
+    ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+    if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
+        mkdir old
+        mv $ARCH_NAME old/
+        echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
+        downloadArchive $ADDR_NAME
+        ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+    fi
+    
+    echo "Extracting $WHAT [$ARCH_NAME]..."
+    extractTarGz $ARCH_NAME
+
+    DIR_NAME=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Making $WHAT [$DIR_NAME]..."
+    echo
+
+    cd $DIR_NAME
+    
+    if		[ "$SYSTEM" = "FreeBSD" ] ; then
+        echo "TODO..."
+    elif	[ "$SYSTEM" = "Darwin" ] ; then
+        echo "TODO..."
+    elif    [[ "$SYSTEM" =~ "MINGW" ]]; then
+        if [ "$BIT64" = true ]; then
+            echo "TODO..."
+        else
+            echo "TODO..."
+        fi
+        mkdir .build
+        cd .build
+        cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$EXT_DIR"
+    else
+        if [ $DEBUG ] ; then
+            ./config --prefix="$EXT_DIR" --openssldir="ssl_"
+        else
+            ./config --prefix="$EXT_DIR" --openssldir="ssl_"
+        fi
+    fi
+    if    [[ "$SYSTEM" =~ "MINGW" ]]; then
+        cmake --build . --config release
+        cmake --build . --config release --target install
+    else
+        make && make install_sw
+    fi
     
     cd ..
     
@@ -223,7 +316,7 @@ function buildBoringSSL
     
     cmake -DCMAKE_INSTALL_PREFIX="$EXT_DIR" ..
     
-    make
+    cmake --build . --config release
     
     if [ ! -d $EXT_DIR/include ]; then
         mkdir -p "$EXT_DIR/include"
@@ -245,6 +338,7 @@ BUILD_BOOST_MIN=
 BUILD_BOOST_FULL=
 BUILD_OPENSSL=
 BUILD_BORINGSSL=
+BUILD_C_ARES=
 
 BUILD_SOMETHING=
 
@@ -276,6 +370,10 @@ while [ "$#" -gt 0 ]; do
         BUILD_BORINGSSL="yes"
         BUILD_SOMETHING="yes"
         ;;
+    --cares)
+        BUILD_C_ARES="yes"
+        BUILD_SOMETHING="yes"
+        ;;
     --debug)
         DEBUG="yes"
         ;;
@@ -285,6 +383,9 @@ while [ "$#" -gt 0 ]; do
     --system)
         shift
         SYSTEM="$1"
+        ;;
+    --64bit)
+        BIT64=true
         ;;
     -h|--help)
         HELP="yes"
@@ -296,9 +397,6 @@ while [ "$#" -gt 0 ]; do
     esac
     shift
 done
-
-#echo "Debug build = $DEBUG"
-#echo "Force download = $DOWNLOAD"
 
 if [ "$HELP" = "yes" ]; then
     printUsage
@@ -324,6 +422,10 @@ fi
 
 if [ $BUILD_BORINGSSL ]; then
     buildBoringSSL
+fi
+
+if [ $BUILD_C_ARES ]; then
+    buildCAres
 fi
 
 if [ $BUILD_BOOST_FULL ]; then

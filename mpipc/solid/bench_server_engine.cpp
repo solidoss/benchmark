@@ -1,14 +1,15 @@
+#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
+
+#include "solid/frame/mpipc/mpipcservice.hpp"
+#include "solid/frame/mpipc/mpipcconfiguration.hpp"
+#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
+
 #include "solid/system/log.hpp"
 #include "solid/frame/manager.hpp"
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
 
 #include "solid/frame/aio/aioresolver.hpp"
-
-#include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
-#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
 
 #include "bench_server_engine.hpp"
 #include "bench_protocol.hpp"
@@ -43,13 +44,13 @@ namespace{
         ErrorConditionT const&           _rerror)
     {
         solid_log(generic_logger, Info, "received message on server");
-        SOLID_CHECK(not _rerror);
+        SOLID_CHECK(!_rerror);
 
         if (_rrecv_msg_ptr) {
-            SOLID_CHECK(not _rsent_msg_ptr);
+            SOLID_CHECK(!_rsent_msg_ptr);
             {
                 istringstream iss{std::move(_rrecv_msg_ptr->str)};
-                while(not iss.eof()){
+                while(!iss.eof()){
                     _rrecv_msg_ptr->vec.emplace_back();
                     iss>>_rrecv_msg_ptr->vec.back();
                 }
@@ -59,7 +60,7 @@ namespace{
         }
 
         if (_rsent_msg_ptr) {
-            SOLID_CHECK(not _rrecv_msg_ptr);
+            SOLID_CHECK(!_rrecv_msg_ptr);
         }
     }
 

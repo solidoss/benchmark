@@ -6,6 +6,6 @@ ExternalProject_Add(
     PREFIX ${cereal_PREFIX}
     URL "https://github.com/USCiLab/cereal/archive/v1.2.2.tar.gz"
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND mkdir -p ${CMAKE_BINARY_DIR}/external/include/ && cp -r ${cereal_PREFIX}/src/build_cereal/include/cereal ${CMAKE_BINARY_DIR}/external/include/
+    BUILD_COMMAND ${CMAKE_COMMAND} -E copy_directory "${cereal_PREFIX}/src/build_cereal/include/cereal" "${CMAKE_BINARY_DIR}/external/include/cereal"
+    INSTALL_COMMAND ""
 )

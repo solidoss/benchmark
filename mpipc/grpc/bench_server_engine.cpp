@@ -3,7 +3,7 @@
 #include <grpc/support/log.h>
 #include <thread>
 #include <sstream>
-#include <unistd.h>
+//#include <unistd.h>
 
 #include "bench.grpc.pb.h"
 
@@ -84,7 +84,7 @@ private:
                     istringstream iss{std::move(*pstr)};
                     delete pstr; pstr = nullptr;
                     
-                    while(not iss.eof()){
+                    while(!iss.eof()){
                         string tmp;
                         iss >> tmp;
                         msg_.add_tokens(std::move(tmp));
