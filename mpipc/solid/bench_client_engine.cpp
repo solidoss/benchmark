@@ -21,6 +21,9 @@
 
 using namespace solid;
 using namespace std;
+namespace{
+const LoggerT logger("bench_client");
+}
 
 namespace bench_client{
 
@@ -31,10 +34,6 @@ using AtomicSizeT = std::atomic<size_t>;
 namespace{
     
     struct Context{
-        Context():ipcservice(manager), fwp(WorkPoolConfiguration()), resolver(fwp), ramp_up_connection_count(0), ramp_down_connection_count(0), messages_transferred(0), tokens_transferred(0){
-            solid::log_start(std::cerr, {"\\*:EW", "solid::frame::mpipc:EW"});
-            
-        }
         AioSchedulerT               scheduler;
         
         frame::Manager              manager;
@@ -48,11 +47,23 @@ namespace{
         condition_variable          cnd;
         AtomicSizeT                 ramp_up_connection_count;
         size_t                      ramp_down_connection_count;
+        AtomicSizeT                 pending_ramp_down_connection_count;
         size_t                      loop_count;
         size_t                      connection_count;
         bool                        print_response;
         AtomicSizeT                 messages_transferred;
         AtomicSizeT                 tokens_transferred;
+        atomic<uint64_t>            payload_trasferred;
+
+        Context():ipcservice(manager), fwp(WorkPoolConfiguration()), resolver(fwp), ramp_up_connection_count(0), ramp_down_connection_count(0), pending_ramp_down_connection_count(0), messages_transferred(0), tokens_transferred(0),
+        payload_trasferred(0){
+        }
+        
+        void print(){
+            cout<<"Tokens trasferred: "<<tokens_transferred<<endl;
+            cout<<"Messages transferred: "<<messages_transferred<<endl;
+            cout<<"Payload transferred: "<<payload_trasferred<<endl;
+        }
     };
     
     unique_ptr<Context> ctx;
@@ -73,6 +84,12 @@ namespace{
         
         ++ctx->messages_transferred;
         ctx->tokens_transferred += _rrecv_msg_ptr->vec.size();
+
+        ctx->payload_trasferred += _rsent_msg_ptr->str.size();
+
+        for(const auto & v : _rrecv_msg_ptr->vec){
+            ctx->payload_trasferred += v.size();
+        }
         
         if(ctx->print_response){
             cout<<con_val.first<<':'<<con_val.second<<' ';
@@ -91,29 +108,43 @@ namespace{
         }else if(con_val.second == 1){
             --con_val.second;
         }else{
-            _rctx.service().closeConnection(_rctx.recipientId());
+            solid_dbg(logger, Info, _rctx.recipientId());
+            //cannot directly close the connection here because the pool will create another one automatically
+            //_rctx.service().closeConnection(_rctx.recipientId());
+            const size_t crtcnt = ctx->pending_ramp_down_connection_count.fetch_add(1) + 1;
+            if(crtcnt == ctx->connection_count){
+                //all connectios stopping
+                _rctx.service().forceCloseConnectionPool(
+                    _rctx.recipientId(), 
+                    [](frame::mpipc::ConnectionContext& _rctx) {
+                        solid_dbg(generic_logger, Info, "------------------");
+                        lock_guard<mutex> lock(ctx->mtx);
+                        ctx->print();
+                        cout<<"ramp_down_connection_count: "<<ctx->ramp_down_connection_count<<endl;
+                        SOLID_CHECK(ctx->ramp_down_connection_count == 1, "failed: "<<ctx->ramp_down_connection_count);
+                        _exit(0);
+                        //cnd.notify_one();
+                    }
+                );
+            }
         }
     }
     
     void connection_stop(frame::mpipc::ConnectionContext& _rctx)
     {
         if(_rctx.isConnectionActive()){
+            solid_dbg(logger, Info, _rctx.recipientId());
             unique_lock<mutex> lock(ctx->mtx);
             SOLID_ASSERT(_rctx.device());
             --ctx->ramp_down_connection_count;
-            if(ctx->ramp_down_connection_count == 0){
-                cout<<"Done: msgcnt = "<<ctx->messages_transferred<<" tokencnt = "<<ctx->tokens_transferred<<endl;
-                _exit(0);
-                ctx->cnd.notify_one();
-            }
         }
     }
 
     void connection_start(frame::mpipc::ConnectionContext& _rctx)
     {
-        solid_dbg(generic_logger, Info, _rctx.recipientId());
         const size_t crt_idx = ctx->ramp_up_connection_count.fetch_add(1);
         if(crt_idx < ctx->connection_count){
+            solid_dbg(logger, Info, _rctx.recipientId());
             _rctx.any() = make_pair(crt_idx + 2, ctx->loop_count - 1);
             _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[crt_idx % ctx->line_vec.size()]), {frame::mpipc::MessageFlagsE::WaitResponse});
             _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]), {frame::mpipc::MessageFlagsE::WaitResponse});
@@ -137,6 +168,7 @@ namespace{
         const std::string &_text_file,
         const bool _print_response){
         
+        solid_log(logger, Info, "");
         ctx.reset(new Context);
         {
             ifstream ifs(_text_file);

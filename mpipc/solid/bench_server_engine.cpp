@@ -26,7 +26,6 @@ namespace bench_server{
 namespace{
     struct Context{
         Context():ipcservice(manager){
-            solid::log_start(std::cerr, {"\\*:EW"});
         }
         AioSchedulerT               scheduler;
         
@@ -43,7 +42,7 @@ namespace{
         std::shared_ptr<M>&              _rrecv_msg_ptr,
         ErrorConditionT const&           _rerror)
     {
-        solid_log(generic_logger, Info, "received message on server");
+        solid_dbg(generic_logger, Info, "received message on server");
         SOLID_CHECK(!_rerror);
 
         if (_rrecv_msg_ptr) {

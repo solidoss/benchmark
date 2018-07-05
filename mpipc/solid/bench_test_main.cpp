@@ -2,6 +2,7 @@
 #include "boost/program_options.hpp"
 #include "bench_client_engine.hpp"
 #include "bench_server_engine.hpp"
+#include "solid/system/log.hpp"
 
 using namespace std;
 
@@ -31,7 +32,9 @@ int main(int argc, char *argv[]){
 
     if(parseArguments(p, argc, argv)) return 0;
     
-    int listen_port = bench_server::start(p.secure, p.compress, "localhost:9999");
+    solid::log_start(std::cerr, {".*:VIEW"});
+
+    int listen_port = bench_server::start(p.secure, p.compress, "127.0.0.1:9999");
     
     if(listen_port > 0){
         cout << "Listening for connections on: localhost:9999"<<endl;
@@ -40,7 +43,7 @@ int main(int argc, char *argv[]){
         return 0;
     }
     
-    int rv = bench_client::start(p.secure, p.compress, "localhost:9999", "9999", p.connection_count, p.loop_count, p.text_file_path, p.print_response);
+    int rv = bench_client::start(p.secure, p.compress, "127.0.0.1:9999", "9999", p.connection_count, p.loop_count, p.text_file_path, p.print_response);
     
     if(rv >= 0){
         bench_client::wait();
