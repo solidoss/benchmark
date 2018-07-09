@@ -126,5 +126,6 @@ namespace{
     void stop(const bool _wait){
         ctx->manager.stop();
         ctx->scheduler.stop(_wait);
+        ctx.reset();
     }
 }//namespace bench

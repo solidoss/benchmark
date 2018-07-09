@@ -121,9 +121,9 @@ namespace{
                         lock_guard<mutex> lock(ctx->mtx);
                         ctx->print();
                         cout<<"ramp_down_connection_count: "<<ctx->ramp_down_connection_count<<endl;
-                        SOLID_CHECK(ctx->ramp_down_connection_count == 1, "failed: "<<ctx->ramp_down_connection_count);
-                        _exit(0);
-                        //cnd.notify_one();
+                        //SOLID_CHECK(ctx->ramp_down_connection_count == 1, "failed: "<<ctx->ramp_down_connection_count);
+                        //_exit(0);
+                        ctx->cnd.notify_one();
                     }
                 );
             }
@@ -137,6 +137,7 @@ namespace{
             unique_lock<mutex> lock(ctx->mtx);
             SOLID_ASSERT(_rctx.device());
             --ctx->ramp_down_connection_count;
+            ctx->cnd.notify_one();
         }
     }
 
@@ -263,6 +264,7 @@ namespace{
     void stop(const bool _wait){
         ctx->manager.stop();
         ctx->scheduler.stop(_wait);
+        ctx.reset();
     }
 }//namespace bench
 
