@@ -167,7 +167,7 @@ int start(const bool _secure, const bool _compress, const std::string &_listen_a
 
 void stop(const bool _wait){
     if(_wait){
-        _exit(0);
+        exit(0);
     }
 }
 

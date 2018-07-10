@@ -57,6 +57,44 @@ void boost_serialization_test(size_t iterations)
               << std::endl;
 }
 
+void cereal_portable_serialization_test(size_t iterations)
+{
+    using namespace cereal_test;
+
+    Record r1, r2;
+
+    for (size_t i = 0; i < kIntegers.size(); i++) {
+        r1.ids.push_back(kIntegers[i]);
+    }
+
+    for (size_t i = 0; i < kStringsCount; i++) {
+        r1.strings.push_back(kStringValue);
+    }
+
+    std::string serialized;
+
+    to_string(r1, serialized, true);
+    from_string(r2, serialized, true);
+
+    if (r1 != r2) {
+        throw std::logic_error("cereal's case: deserialization failed");
+    }
+
+    std::cout << "cereal: size = " << serialized.size() << " bytes" << std::endl;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (size_t i = 0; i < iterations; i++) {
+        serialized.clear();
+        to_string(r1, serialized, true);
+        from_string(r2, serialized, true);
+    }
+    auto finish   = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+
+    std::cout << "cereal portable: time = " << duration << " milliseconds" << std::endl
+              << std::endl;
+}
+
 void cereal_serialization_test(size_t iterations)
 {
     using namespace cereal_test;
@@ -73,8 +111,8 @@ void cereal_serialization_test(size_t iterations)
 
     std::string serialized;
 
-    to_string(r1, serialized);
-    from_string(r2, serialized);
+    to_string(r1, serialized, false);
+    from_string(r2, serialized, false);
 
     if (r1 != r2) {
         throw std::logic_error("cereal's case: deserialization failed");
@@ -85,8 +123,8 @@ void cereal_serialization_test(size_t iterations)
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < iterations; i++) {
         serialized.clear();
-        to_string(r1, serialized);
-        from_string(r2, serialized);
+        to_string(r1, serialized, false);
+        from_string(r2, serialized, false);
     }
     auto finish   = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
@@ -199,7 +237,7 @@ void solid_serialization_v2_test(size_t iterations)
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        std::cout << "usage: " << argv[0] << " N [boost solid solid_v2 cereal]";
+        std::cout << "usage: " << argv[0] << " N [boost solid solid_v2 cereal cerealp]";
         std::cout << std::endl
                   << std::endl;
         std::cout << "arguments: " << std::endl;
@@ -245,6 +283,9 @@ int main(int argc, char** argv)
 
         if (names.empty() || names.find("cereal") != names.end()) {
             cereal_serialization_test(iterations);
+        }
+        if (names.empty() || names.find("cerealp") != names.end()) {
+            cereal_portable_serialization_test(iterations);
         }
     } catch (std::exception& exc) {
         std::cerr << "Error: " << exc.what() << std::endl;

@@ -39,7 +39,7 @@ private:
     }
 };
 
-void to_string(const Record& record, std::string& data);
-void from_string(Record& record, const std::string& data);
+void to_string(const Record& record, std::string& data, const bool _portable);
+void from_string(Record& record, const std::string& data, const bool _portable);
 
 } // namespace cereal_test
