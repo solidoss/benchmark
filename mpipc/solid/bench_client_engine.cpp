@@ -76,9 +76,9 @@ namespace{
         ErrorConditionT const&           _rerror)
     {
         solid_dbg(generic_logger, Info, "message on client");
-        SOLID_CHECK(!_rerror);
-        SOLID_CHECK(_rrecv_msg_ptr && _rsent_msg_ptr);
-        SOLID_CHECK(_rrecv_msg_ptr->str.empty() && _rrecv_msg_ptr->vec.size());
+        solid_check(!_rerror);
+        solid_check(_rrecv_msg_ptr && _rsent_msg_ptr);
+        solid_check(_rrecv_msg_ptr->str.empty() && _rrecv_msg_ptr->vec.size());
         
         auto   &con_val = *_rctx.any().cast<pair<size_t, size_t>>();
         
@@ -121,7 +121,7 @@ namespace{
                         lock_guard<mutex> lock(ctx->mtx);
                         ctx->print();
                         cout<<"ramp_down_connection_count: "<<ctx->ramp_down_connection_count<<endl;
-                        //SOLID_CHECK(ctx->ramp_down_connection_count == 1, "failed: "<<ctx->ramp_down_connection_count);
+                        //solid_check(ctx->ramp_down_connection_count == 1, "failed: "<<ctx->ramp_down_connection_count);
                         //_exit(0);
                         ctx->cnd.notify_one();
                     }
@@ -135,7 +135,7 @@ namespace{
         if(_rctx.isConnectionActive()){
             solid_dbg(logger, Info, _rctx.recipientId());
             unique_lock<mutex> lock(ctx->mtx);
-            SOLID_ASSERT(_rctx.device());
+            solid_assert(_rctx.device());
             --ctx->ramp_down_connection_count;
             ctx->cnd.notify_one();
         }
@@ -192,10 +192,6 @@ namespace{
 
         if (err) {
             return -2;
-        }
-        
-        if (err) {
-            return -3;
         }
         
         {
@@ -256,7 +252,7 @@ namespace{
         unique_lock<mutex> lock(ctx->mtx);
 
         if (!ctx->cnd.wait_for(lock, std::chrono::seconds(1000), []() { return ctx->ramp_down_connection_count == 0; })) {
-            SOLID_THROW("Process is taking too long.");
+            solid_throw("Process is taking too long.");
         }
         
     }

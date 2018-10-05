@@ -41,6 +41,7 @@ target_link_libraries(bench_server_engine
     solid_frame_aio_openssl
     solid_serialization_v2
     ${SNAPPY_LIB}
+    ${SYS_DYNAMIC_LOAD_LIB}
 )
 add_dependencies(bench_server_engine bench_certs build_snappy)
 
@@ -51,7 +52,6 @@ target_link_libraries(bench_server
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${SYS_BASIC_LIBS}
-    ${SYS_DYNAMIC_LOAD_LIB}
 )
 
 ## Client =====================================================================
@@ -63,6 +63,7 @@ target_link_libraries(bench_client_engine
     solid_frame_aio_openssl
     solid_serialization_v2
     ${SNAPPY_LIB}
+    ${SYS_DYNAMIC_LOAD_LIB}
 )
 add_dependencies(bench_client_engine bench_certs bench_text build_snappy)
 
@@ -73,7 +74,6 @@ target_link_libraries(bench_client
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${SYS_BASIC_LIBS}
-    ${SYS_DYNAMIC_LOAD_LIB}
 )
 
 ## Test =====================================================================

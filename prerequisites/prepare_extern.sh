@@ -29,6 +29,7 @@ printUsage()
 BOOST_ADDR="http://sourceforge.net/projects/boost/files/boost/1.67.0/boost_1_67_0.tar.bz2"
 OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0h.tar.gz"
 CARES_ADDR="https://c-ares.haxx.se/download/c-ares-1.14.0.tar.gz"
+PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz"
 
 SYSTEM=
 BIT64=
@@ -264,24 +265,19 @@ function buildCAres
         cd .build
         cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$EXT_DIR"
     else
-        if [ $DEBUG ] ; then
-            ./config --prefix="$EXT_DIR" --openssldir="ssl_"
-        else
-            ./config --prefix="$EXT_DIR" --openssldir="ssl_"
-        fi
+        mkdir .build
+        cd .build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$EXT_DIR"
     fi
     if    [[ "$SYSTEM" =~ "MINGW" ]]; then
         cmake --build . --config release
         cmake --build . --config release --target install
     else
-        make && make install_sw
+        cmake --build . --config release
+        cmake --build . --config release --target install
     fi
     
     cd ..
-    
-    echo "Copy test certificates to ssl_ dir..."
-    
-    cp $DIR_NAME/demos/tunala/*.pem ssl_/certs/.
     
     echo
     echo "Done $WHAT!"
@@ -332,6 +328,69 @@ function buildBoringSSL
     cd "$EXT_DIR"
 }
 
+buildProtobuf()
+{
+    WHAT="protobuf"
+    ADDR_NAME=$PROTOBUF_ADDR
+    echo
+    echo "Building $WHAT..."
+    echo
+
+    OLD_DIR=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Cleanup previous builds..."
+    echo
+
+    rm -rf $OLD_DIR
+    rm -rf include/google/protobuf
+    rm -rf lib/libprotobuf*
+
+    echo
+    echo "Prepare the $WHAT archive..."
+    echo
+
+    ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+    if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
+        mkdir old
+        mv $ARCH_NAME old/
+        echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
+        downloadArchive $ADDR_NAME
+        ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+    fi
+    
+    echo "Extracting $WHAT [$ARCH_NAME]..."
+    extractTarGz $ARCH_NAME
+
+    DIR_NAME=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Making $WHAT [$DIR_NAME]..."
+    echo
+
+    cd $DIR_NAME
+    
+    if		[ "$SYSTEM" = "FreeBSD" ] ; then
+        echo "Not implemented"
+    elif	[ "$SYSTEM" = "Darwin" ] ; then
+        echo "Not implemented"
+    elif    [[ "$SYSTEM" =~ "MINGW" ]]; then
+        echo "Not implemented"
+    else
+        ./configure --prefix="$EXT_DIR" --disable-shared
+    fi
+    
+    if    [[ "$SYSTEM" =~ "MINGW" ]]; then
+        nmake && nmake install
+    else
+        make && make install
+    fi
+    
+    cd ..
+    
+    echo
+    echo "Done $WHAT!"
+    echo
+}
+
 EXT_DIR="`pwd`"
 
 BUILD_BOOST_MIN=
@@ -339,6 +398,7 @@ BUILD_BOOST_FULL=
 BUILD_OPENSSL=
 BUILD_BORINGSSL=
 BUILD_C_ARES=
+BUILD_PROTOBUF=
 
 BUILD_SOMETHING=
 
@@ -372,6 +432,10 @@ while [ "$#" -gt 0 ]; do
         ;;
     --cares)
         BUILD_C_ARES="yes"
+        BUILD_SOMETHING="yes"
+        ;;
+    --protobuf)
+        BUILD_PROTOBUF="yes"
         BUILD_SOMETHING="yes"
         ;;
     --debug)
@@ -426,6 +490,10 @@ fi
 
 if [ $BUILD_C_ARES ]; then
     buildCAres
+fi
+
+if [ $BUILD_PROTOBUF ]; then
+    buildProtobuf
 fi
 
 if [ $BUILD_BOOST_FULL ]; then

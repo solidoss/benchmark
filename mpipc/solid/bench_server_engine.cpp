@@ -43,10 +43,10 @@ namespace{
         ErrorConditionT const&           _rerror)
     {
         solid_dbg(generic_logger, Info, "received message on server");
-        SOLID_CHECK(!_rerror);
+        solid_check(!_rerror);
 
         if (_rrecv_msg_ptr) {
-            SOLID_CHECK(!_rsent_msg_ptr);
+            solid_check(!_rsent_msg_ptr);
             {
                 istringstream iss{std::move(_rrecv_msg_ptr->str)};
                 while(!iss.eof()){
@@ -55,11 +55,11 @@ namespace{
                 }
                 _rrecv_msg_ptr->str.clear();
             }
-            SOLID_CHECK(!_rctx.service().sendResponse(_rctx.recipientId(), std::move(_rrecv_msg_ptr)));
+            solid_check(!_rctx.service().sendResponse(_rctx.recipientId(), std::move(_rrecv_msg_ptr)));
         }
 
         if (_rsent_msg_ptr) {
-            SOLID_CHECK(!_rrecv_msg_ptr);
+            solid_check(!_rrecv_msg_ptr);
         }
     }
 
