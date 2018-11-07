@@ -1,7 +1,7 @@
-#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
-#include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
+#include "solid/frame/mprpc/mprpcsocketstub_openssl.hpp"
+#include "solid/frame/mprpc/mprpcservice.hpp"
+#include "solid/frame/mprpc/mprpcconfiguration.hpp"
+#include "solid/frame/mprpc/mprpccompression_snappy.hpp"
 
 #include "solid/frame/manager.hpp"
 #include "solid/frame/scheduler.hpp"
@@ -37,7 +37,7 @@ namespace{
         AioSchedulerT               scheduler;
         
         frame::Manager              manager;
-        frame::mpipc::ServiceT      ipcservice;
+        frame::mprpc::ServiceT      ipcservice;
         FunctionWorkPool            fwp;
         frame::aio::Resolver        resolver;
         
@@ -70,7 +70,7 @@ namespace{
     
     template <class M>
     void complete_message(
-        frame::mpipc::ConnectionContext& _rctx,
+        frame::mprpc::ConnectionContext& _rctx,
         std::shared_ptr<M>&              _rsent_msg_ptr,
         std::shared_ptr<M>&              _rrecv_msg_ptr,
         ErrorConditionT const&           _rerror)
@@ -104,7 +104,7 @@ namespace{
             _rsent_msg_ptr->str = ctx->line_vec[con_val.first % ctx->line_vec.size()];
             ++con_val.first;
             
-            _rctx.service().sendMessage(_rctx.recipientId(), std::move(_rsent_msg_ptr), {frame::mpipc::MessageFlagsE::WaitResponse});
+            _rctx.service().sendMessage(_rctx.recipientId(), std::move(_rsent_msg_ptr), {frame::mprpc::MessageFlagsE::WaitResponse});
         }else if(con_val.second == 1){
             --con_val.second;
         }else{
@@ -116,7 +116,7 @@ namespace{
                 //all connectios stopping
                 _rctx.service().forceCloseConnectionPool(
                     _rctx.recipientId(), 
-                    [](frame::mpipc::ConnectionContext& _rctx) {
+                    [](frame::mprpc::ConnectionContext& _rctx) {
                         solid_dbg(generic_logger, Info, "------------------");
                         lock_guard<mutex> lock(ctx->mtx);
                         ctx->print();
@@ -130,7 +130,7 @@ namespace{
         }
     }
     
-    void connection_stop(frame::mpipc::ConnectionContext& _rctx)
+    void connection_stop(frame::mprpc::ConnectionContext& _rctx)
     {
         if(_rctx.isConnectionActive()){
             solid_dbg(logger, Info, _rctx.recipientId());
@@ -141,14 +141,14 @@ namespace{
         }
     }
 
-    void connection_start(frame::mpipc::ConnectionContext& _rctx)
+    void connection_start(frame::mprpc::ConnectionContext& _rctx)
     {
         const size_t crt_idx = ctx->ramp_up_connection_count.fetch_add(1);
         if(crt_idx < ctx->connection_count){
             solid_dbg(logger, Info, _rctx.recipientId());
             _rctx.any() = make_pair(crt_idx + 2, ctx->loop_count - 1);
-            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[crt_idx % ctx->line_vec.size()]), {frame::mpipc::MessageFlagsE::WaitResponse});
-            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]), {frame::mpipc::MessageFlagsE::WaitResponse});
+            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[crt_idx % ctx->line_vec.size()]), {frame::mprpc::MessageFlagsE::WaitResponse});
+            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]), {frame::mprpc::MessageFlagsE::WaitResponse});
         }
     }
 
@@ -196,15 +196,15 @@ namespace{
         
         {
             auto                        proto = bench::ProtocolT::create();
-            frame::mpipc::Configuration cfg(ctx->scheduler, proto);
+            frame::mprpc::Configuration cfg(ctx->scheduler, proto);
 
             bench::protocol_setup(MessageSetup(), *proto);
             
             cfg.pool_max_active_connection_count = _connection_count;
 
-            cfg.client.name_resolve_fnc = frame::mpipc::InternetResolverF(ctx->resolver, _default_port.c_str());
+            cfg.client.name_resolve_fnc = frame::mprpc::InternetResolverF(ctx->resolver, _default_port.c_str());
 
-            cfg.client.connection_start_state = frame::mpipc::ConnectionState::Active;
+            cfg.client.connection_start_state = frame::mprpc::ConnectionState::Active;
             
             cfg.connection_stop_fnc         = &connection_stop;
             cfg.client.connection_start_fnc = &connection_start;
@@ -212,7 +212,7 @@ namespace{
             cfg.connection_send_buffer_start_capacity_kb = 64;
             
             if(_secure){
-                frame::mpipc::openssl::setup_client(
+                frame::mprpc::openssl::setup_client(
                     cfg,
                     [](frame::aio::openssl::Context& _rctx) -> ErrorCodeT {
                         _rctx.loadVerifyFile("echo-ca-cert.pem");
@@ -220,11 +220,11 @@ namespace{
                         _rctx.loadPrivateKeyFile("echo-client-key.pem");
                         return ErrorCodeT();
                     },
-                    frame::mpipc::openssl::NameCheckSecureStart{"echo-server"});
+                    frame::mprpc::openssl::NameCheckSecureStart{"echo-server"});
             }
 
             if(_compress){
-                frame::mpipc::snappy::setup(cfg);
+                frame::mprpc::snappy::setup(cfg);
             }
 
             err = ctx->ipcservice.reconfigure(std::move(cfg));

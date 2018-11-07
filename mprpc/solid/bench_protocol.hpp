@@ -1,16 +1,16 @@
 
 #pragma once
 
-#include "solid/frame/mpipc/mpipccontext.hpp"
-#include "solid/frame/mpipc/mpipcmessage.hpp"
-#include "solid/frame/mpipc/mpipcprotocol_serialization_v2.hpp"
+#include "solid/frame/mprpc/mprpccontext.hpp"
+#include "solid/frame/mprpc/mprpcmessage.hpp"
+#include "solid/frame/mprpc/mprpcprotocol_serialization_v2.hpp"
 
 #include <vector>
 #include <string>
 
 namespace bench {
 
-struct Message : solid::frame::mpipc::Message {
+struct Message : solid::frame::mprpc::Message {
     using StringVectorT = std::vector<std::string>;
     std::string     str;
     StringVectorT   vec;
@@ -34,7 +34,7 @@ struct Message : solid::frame::mpipc::Message {
     }
 };
 
-using ProtocolT = solid::frame::mpipc::serialization_v2::Protocol<uint8_t>;
+using ProtocolT = solid::frame::mprpc::serialization_v2::Protocol<uint8_t>;
 
 template <class R>
 inline void protocol_setup(R _r, ProtocolT& _rproto)

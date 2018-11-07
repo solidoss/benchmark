@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
 
     if(parseArguments(p, argc, argv)) return 0;
     
-    solid::log_start(std::cerr, {"bench_client:VIEW", "solid::frame::mpipc:EW"});
+    solid::log_start(std::cerr, {"bench_client:VIEW", "solid::frame::mprpc:EW"});
 
     int listen_port = bench_server::start(p.secure, p.compress, "127.0.0.1:9999");
     

@@ -37,7 +37,7 @@ add_custom_target(bench_text
 add_library(bench_server_engine bench_protocol.hpp bench_server_engine.hpp  bench_server_engine.cpp)
 
 target_link_libraries(bench_server_engine
-    solid_frame_mpipc
+    solid_frame_mprpc
     solid_frame_aio_openssl
     solid_serialization_v2
     ${SNAPPY_LIB}
@@ -59,7 +59,7 @@ target_link_libraries(bench_server
 add_library(bench_client_engine bench_protocol.hpp bench_client_engine.hpp  bench_client_engine.cpp)
 
 target_link_libraries(bench_client_engine
-    solid_frame_mpipc
+    solid_frame_mprpc
     solid_frame_aio_openssl
     solid_serialization_v2
     ${SNAPPY_LIB}

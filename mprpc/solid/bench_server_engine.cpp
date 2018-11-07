@@ -1,8 +1,8 @@
-#include "solid/frame/mpipc/mpipcsocketstub_openssl.hpp"
+#include "solid/frame/mprpc/mprpcsocketstub_openssl.hpp"
 
-#include "solid/frame/mpipc/mpipcservice.hpp"
-#include "solid/frame/mpipc/mpipcconfiguration.hpp"
-#include "solid/frame/mpipc/mpipccompression_snappy.hpp"
+#include "solid/frame/mprpc/mprpcservice.hpp"
+#include "solid/frame/mprpc/mprpcconfiguration.hpp"
+#include "solid/frame/mprpc/mprpccompression_snappy.hpp"
 
 #include "solid/system/log.hpp"
 #include "solid/frame/manager.hpp"
@@ -30,14 +30,14 @@ namespace{
         AioSchedulerT               scheduler;
         
         frame::Manager              manager;
-        frame::mpipc::ServiceT      ipcservice;
+        frame::mprpc::ServiceT      ipcservice;
     };
     
     unique_ptr<Context> ctx;
     
     template <class M>
     void complete_message(
-        frame::mpipc::ConnectionContext& _rctx,
+        frame::mprpc::ConnectionContext& _rctx,
         std::shared_ptr<M>&              _rsent_msg_ptr,
         std::shared_ptr<M>&              _rrecv_msg_ptr,
         ErrorConditionT const&           _rerror)
@@ -85,18 +85,18 @@ namespace{
         
         {
             auto                        proto = bench::ProtocolT::create();
-            frame::mpipc::Configuration cfg(ctx->scheduler, proto);
+            frame::mprpc::Configuration cfg(ctx->scheduler, proto);
 
             bench::protocol_setup(MessageSetup(), *proto);
 
             cfg.server.listener_address_str = _listen_addr;
 
-            cfg.server.connection_start_state = frame::mpipc::ConnectionState::Active;
+            cfg.server.connection_start_state = frame::mprpc::ConnectionState::Active;
             cfg.connection_recv_buffer_start_capacity_kb = 64;
             cfg.connection_send_buffer_start_capacity_kb = 64;
             
             if(_secure){
-                frame::mpipc::openssl::setup_server(
+                frame::mprpc::openssl::setup_server(
                     cfg,
                     [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
                         _rctx.loadVerifyFile("echo-ca-cert.pem"/*"/etc/pki/tls/certs/ca-bundle.crt"*/);
@@ -104,12 +104,12 @@ namespace{
                         _rctx.loadPrivateKeyFile("echo-server-key.pem");
                         return ErrorCodeT();
                     },
-                    frame::mpipc::openssl::NameCheckSecureStart{"echo-client"}//does nothing - OpenSSL does not check for hostname on SSL_accept
+                    frame::mprpc::openssl::NameCheckSecureStart{"echo-client"}//does nothing - OpenSSL does not check for hostname on SSL_accept
                 );
             }
 
             if(_compress){
-                frame::mpipc::snappy::setup(cfg);
+                frame::mprpc::snappy::setup(cfg);
             }
 
             err = ctx->ipcservice.reconfigure(std::move(cfg));

@@ -112,4 +112,4 @@ include(CTest)
 # Project subdirectories
 #-----------------------------------------------------------------
 add_subdirectory(serialization)
-add_subdirectory(mpipc)
+add_subdirectory(mprpc)
