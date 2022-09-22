@@ -3,18 +3,18 @@
 
 #include "solid/frame/mprpc/mprpccontext.hpp"
 #include "solid/frame/mprpc/mprpcmessage.hpp"
-#include "solid/reflection/v1/reflection.hpp"
 #include "solid/frame/mprpc/mprpcprotocol_serialization_v3.hpp"
+#include "solid/reflection/v1/reflection.hpp"
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace bench {
 
 struct Message : solid::frame::mprpc::Message {
     using StringVectorT = std::vector<std::string>;
-    std::string     str;
-    StringVectorT   vec;
+    std::string   str;
+    StringVectorT vec;
 
     Message() {}
 
@@ -22,7 +22,7 @@ struct Message : solid::frame::mprpc::Message {
         : str(std::move(_ustr))
     {
     }
-    
+
     Message(const std::string& _str)
         : str(_str)
     {
@@ -41,5 +41,4 @@ inline void configure_protocol(Reg _rreg)
     _rreg(1, "Message", solid::TypeToType<Message>());
 }
 
-} //namespace ipc_echo
-
+} // namespace bench

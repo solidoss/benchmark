@@ -1,4 +1,4 @@
-//courtesy to: https://github.com/thekvs/cpp-serializers
+// courtesy to: https://github.com/thekvs/cpp-serializers
 
 #include <chrono>
 #include <iostream>
@@ -51,7 +51,8 @@ void boost_serialization_test(size_t iterations)
         from_string(r2, serialized);
     }
     auto finish   = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start)
+                        .count();
 
     std::cout << "boost: time = " << duration << " milliseconds" << std::endl
               << std::endl;
@@ -89,9 +90,11 @@ void cereal_portable_serialization_test(size_t iterations)
         from_string(r2, serialized, true);
     }
     auto finish   = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start)
+                        .count();
 
-    std::cout << "cereal portable: time = " << duration << " milliseconds" << std::endl
+    std::cout << "cereal portable: time = " << duration << " milliseconds"
+              << std::endl
               << std::endl;
 }
 
@@ -127,7 +130,8 @@ void cereal_serialization_test(size_t iterations)
         from_string(r2, serialized, false);
     }
     auto finish   = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start)
+                        .count();
 
     std::cout << "cereal: time = " << duration << " milliseconds" << std::endl
               << std::endl;
@@ -149,10 +153,10 @@ void solid_serialization_test(size_t iterations)
 
     SerializerT   s;
     DeserializerT d;
-    
-    std::cout<<"sizeof serializer: "<<sizeof(s)<<std::endl;
-    std::cout<<"sizeof deserializer: "<<sizeof(d)<<std::endl;
-    
+
+    std::cout << "sizeof serializer: " << sizeof(s) << std::endl;
+    std::cout << "sizeof deserializer: " << sizeof(d) << std::endl;
+
     std::string serialized;
 
     to_string(s, r1, serialized);
@@ -165,18 +169,19 @@ void solid_serialization_test(size_t iterations)
     std::cout << "solid: size = " << serialized.size() << " bytes" << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
-    //char buf[256];
+    // char buf[256];
     for (size_t i = 0; i < iterations; i++) {
         serialized.clear();
-        //s.pushNoop(25102510);
-        //s.run(buf, 256);
-        //d.pushNoop(25072507);
-        //d.run(buf, 256);
+        // s.pushNoop(25102510);
+        // s.run(buf, 256);
+        // d.pushNoop(25072507);
+        // d.run(buf, 256);
         to_string(s, r1, serialized);
         from_string(d, r2, serialized);
     }
     auto finish   = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start)
+                        .count();
 
 #ifdef SOLID_HAS_STATISTICS
     cout << "Serialization statistics  :" << endl
@@ -205,9 +210,9 @@ void solid_serialization_v2_test(size_t iterations)
 
     SerializerT   s = type_map().createSerializer();
     DeserializerT d = type_map().createDeserializer();
-    
-    std::cout<<"sizeof serializer: "<<sizeof(s)<<std::endl;
-    std::cout<<"sizeof deserializer: "<<sizeof(d)<<std::endl;
+
+    std::cout << "sizeof serializer: " << sizeof(s) << std::endl;
+    std::cout << "sizeof deserializer: " << sizeof(d) << std::endl;
 
     std::string serialized;
 
@@ -221,14 +226,15 @@ void solid_serialization_v2_test(size_t iterations)
     std::cout << "solid: size = " << serialized.size() << " bytes" << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
-    //char buf[256];
+    // char buf[256];
     for (size_t i = 0; i < iterations; i++) {
         serialized.clear();
         to_string(s, r1, serialized);
         from_string(d, r2, serialized);
     }
     auto finish   = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start)
+                        .count();
 
     std::cout << "solid: time = " << duration << " milliseconds" << std::endl
               << std::endl;
@@ -237,7 +243,8 @@ void solid_serialization_v2_test(size_t iterations)
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        std::cout << "usage: " << argv[0] << " N [boost solid solid_v2 cereal cerealp]";
+        std::cout << "usage: " << argv[0]
+                  << " N [boost solid solid_v2 cereal cerealp]";
         std::cout << std::endl
                   << std::endl;
         std::cout << "arguments: " << std::endl;
@@ -276,7 +283,7 @@ int main(int argc, char** argv)
         if (names.empty() || names.find("solid_v1") != names.end()) {
             solid_serialization_test(iterations);
         }
-        
+
         if (names.empty() || names.find("solid_v2") != names.end()) {
             solid_serialization_v2_test(iterations);
         }

@@ -1,34 +1,37 @@
 #include "bench_server_engine.hpp"
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
-#include <thread>
 #include <sstream>
+#include <thread>
 //#include <unistd.h>
 
 #include "bench.grpc.pb.h"
 
+using bench::BenchMessage;
+using bench::Tokenizer;
 using grpc::Server;
 using grpc::ServerAsyncResponseWriter;
 using grpc::ServerBuilder;
-using grpc::ServerContext;
 using grpc::ServerCompletionQueue;
+using grpc::ServerContext;
 using grpc::Status;
-using bench::BenchMessage;
-using bench::Tokenizer;
 
 using namespace std;
 
 namespace {
 class ServerImpl final {
 public:
-    ~ServerImpl() {
+    ~ServerImpl()
+    {
         server_->Shutdown();
         // Always shutdown the completion queue after the server.
         cq_->Shutdown();
     }
 
     // There is no shutdown handling in this code.
-    void Run(const bool _secure, const bool _compress, const std::string &_listen_addr) {
+    void Run(const bool _secure, const bool _compress,
+        const std::string& _listen_addr)
+    {
         std::string server_address(_listen_addr);
 
         ServerBuilder builder;
@@ -56,12 +59,17 @@ private:
         // server) and the completion queue "cq" used for asynchronous communication
         // with the gRPC runtime.
         CallData(Tokenizer::AsyncService* service, ServerCompletionQueue* cq)
-            : service_(service), cq_(cq), responder_(&ctx_), status_(CREATE) {
+            : service_(service)
+            , cq_(cq)
+            , responder_(&ctx_)
+            , status_(CREATE)
+        {
             // Invoke the serving logic right away.
             Proceed();
         }
 
-        void Proceed() {
+        void Proceed()
+        {
             if (status_ == CREATE) {
                 // Make this instance progress to the PROCESS state.
                 status_ = PROCESS;
@@ -80,11 +88,12 @@ private:
 
                 // The actual processing.
                 {
-                    std::string *pstr = msg_.release_text();
+                    std::string*  pstr = msg_.release_text();
                     istringstream iss{std::move(*pstr)};
-                    delete pstr; pstr = nullptr;
-                    
-                    while(!iss.eof()){
+                    delete pstr;
+                    pstr = nullptr;
+
+                    while (!iss.eof()) {
                         string tmp;
                         iss >> tmp;
                         msg_.add_tokens(std::move(tmp));
@@ -120,16 +129,19 @@ private:
         ServerAsyncResponseWriter<BenchMessage> responder_;
 
         // Let's implement a tiny state machine with the following states.
-        enum CallStatus { CREATE, PROCESS, FINISH };
-        CallStatus status_;  // The current serving state.
-    };//CallData
+        enum CallStatus { CREATE,
+            PROCESS,
+            FINISH };
+        CallStatus status_; // The current serving state.
+    }; // CallData
 
     // This can be run in multiple threads if needed.
-    void HandleRpcs() {
+    void HandleRpcs()
+    {
         // Spawn a new CallData instance to serve new clients.
         new CallData(&service_, cq_.get());
-        void* tag;  // uniquely identifies a request.
-        bool ok;
+        void* tag; // uniquely identifies a request.
+        bool  ok;
         while (true) {
             // Block waiting to read the next event from the completion queue. The
             // event is uniquely identified by its tag, which in this case is the
@@ -143,32 +155,31 @@ private:
     }
 
     std::unique_ptr<ServerCompletionQueue> cq_;
-    Tokenizer::AsyncService service_;
-    std::unique_ptr<Server> server_;
+    Tokenizer::AsyncService                service_;
+    std::unique_ptr<Server>                server_;
 };
 
-}//namespace
+} // namespace
 
-
-namespace bench_server{
-int start(const bool _secure, const bool _compress, const std::string &_listen_addr){
-    thread thr{
-        [](const bool _secure, const bool _compress, const std::string &_listen_addr){
-            ServerImpl server;
-            server.Run(_secure, _compress, _listen_addr);
-        },
-        _secure,
-        _compress,
-        _listen_addr
-    };
+namespace bench_server {
+int start(const bool _secure, const bool _compress,
+    const std::string& _listen_addr)
+{
+    thread thr{[](const bool _secure, const bool _compress,
+                   const std::string& _listen_addr) {
+                   ServerImpl server;
+                   server.Run(_secure, _compress, _listen_addr);
+               },
+        _secure, _compress, _listen_addr};
     thr.detach();
     return 1;
 }
 
-void stop(const bool _wait){
-    if(_wait){
+void stop(const bool _wait)
+{
+    if (_wait) {
         exit(0);
     }
 }
 
-}//namespace bench
+} // namespace bench_server

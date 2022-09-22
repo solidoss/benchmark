@@ -122,3 +122,5 @@ include(CTest)
 #-----------------------------------------------------------------
 add_subdirectory(serialization)
 add_subdirectory(mprpc)
+
+include(cmake/source-format.cmake)

@@ -14,8 +14,8 @@ namespace solid_v2_test {
 typedef std::vector<int64_t>     Integers;
 typedef std::vector<std::string> Strings;
 
-struct Context{};
-struct TypeData{};
+struct Context {};
+struct TypeData {};
 
 class Record {
 public:
@@ -27,19 +27,18 @@ public:
         return (ids == other.ids && strings == other.strings);
     }
 
-    bool operator!=(const Record& other)
-    {
-        return !(*this == other);
-    }
+    bool operator!=(const Record& other) { return !(*this == other); }
 
     SOLID_SERIALIZE_CONTEXT_V2(_s, _rthis, _rctx, _name)
     {
-        _s.add(_rthis.ids, _rctx,  "Record::ids");
+        _s.add(_rthis.ids, _rctx, "Record::ids");
         _s.add(_rthis.strings, _rctx, "Record::strings");
     }
 };
 
-using TypeMapT = solid::serialization::v2::TypeMap<uint8_t, Context, solid::serialization::v2::binary::Serializer, solid::serialization::v2::binary::Deserializer, TypeData>;
+using TypeMapT = solid::serialization::v2::TypeMap<
+    uint8_t, Context, solid::serialization::v2::binary::Serializer,
+    solid::serialization::v2::binary::Deserializer, TypeData>;
 using SerializerT   = TypeMapT::SerializerT;
 using DeserializerT = TypeMapT::DeserializerT;
 
@@ -51,4 +50,4 @@ void from_string(DeserializerT& _rd, Record& record, const std::string& data);
 
 const TypeMapT& type_map();
 
-} // namespace solid_test
+} // namespace solid_v2_test

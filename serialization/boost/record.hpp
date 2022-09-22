@@ -1,4 +1,4 @@
-//courtesy to: https://github.com/thekvs/cpp-serializers
+// courtesy to: https://github.com/thekvs/cpp-serializers
 
 #pragma once
 
@@ -36,10 +36,7 @@ public:
         return (ids == other.ids && strings == other.strings);
     }
 
-    bool operator!=(const Record& other)
-    {
-        return !(*this == other);
-    }
+    bool operator!=(const Record& other) { return !(*this == other); }
 
 private:
     friend class boost::serialization::access;

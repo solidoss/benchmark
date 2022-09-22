@@ -24,10 +24,7 @@ public:
         return (ids == other.ids && strings == other.strings);
     }
 
-    bool operator!=(const Record& other)
-    {
-        return !(*this == other);
-    }
+    bool operator!=(const Record& other) { return !(*this == other); }
 
     template <class S>
     void solidSerializeV1(S& _s)

@@ -1,4 +1,4 @@
-//courtesy to: https://github.com/thekvs/cpp-serializers
+// courtesy to: https://github.com/thekvs/cpp-serializers
 
 #pragma once
 
@@ -24,19 +24,13 @@ public:
         return (ids == other.ids && strings == other.strings);
     }
 
-    bool operator!=(const Record& other)
-    {
-        return !(*this == other);
-    }
+    bool operator!=(const Record& other) { return !(*this == other); }
 
 private:
     friend class cereal::access;
 
     template <typename Archive>
-    void serialize(Archive& ar)
-    {
-        ar(ids, strings);
-    }
+    void serialize(Archive& ar) { ar(ids, strings); }
 };
 
 void to_string(const Record& record, std::string& data, const bool _portable);
