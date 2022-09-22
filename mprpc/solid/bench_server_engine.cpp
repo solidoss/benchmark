@@ -1,8 +1,7 @@
-#include "solid/frame/mprpc/mprpcsocketstub_openssl.hpp"
-
 #include "solid/frame/mprpc/mprpcservice.hpp"
 #include "solid/frame/mprpc/mprpcconfiguration.hpp"
 #include "solid/frame/mprpc/mprpccompression_snappy.hpp"
+#include "solid/frame/mprpc/mprpcsocketstub_openssl.hpp"
 
 #include "solid/system/log.hpp"
 #include "solid/frame/manager.hpp"
@@ -62,70 +61,60 @@ namespace{
             solid_check(!_rrecv_msg_ptr);
         }
     }
-
-    struct MessageSetup {
-        void operator()(bench::ProtocolT& _rprotocol, TypeToType<bench::Message> _t2t, const bench::ProtocolT::TypeIdT& _rtid)
-        {
-            _rprotocol.registerMessage<bench::Message>(complete_message<bench::Message>, _rtid);
-        }
-    };
     
 }//namespace
     
-    int start(const bool _secure, const bool _compress, const std::string &_listen_addr){
-        ErrorConditionT     err;
-        
-        ctx.reset(new Context);
-        
-        err = ctx->scheduler.start(1);
-
-        if (err) {
-            return -1;
-        }
-        
-        {
-            auto                        proto = bench::ProtocolT::create();
-            frame::mprpc::Configuration cfg(ctx->scheduler, proto);
-
-            bench::protocol_setup(MessageSetup(), *proto);
-
-            cfg.server.listener_address_str = _listen_addr;
-
-            cfg.server.connection_start_state = frame::mprpc::ConnectionState::Active;
-            cfg.connection_recv_buffer_start_capacity_kb = 64;
-            cfg.connection_send_buffer_start_capacity_kb = 64;
-            
-            if(_secure){
-                frame::mprpc::openssl::setup_server(
-                    cfg,
-                    [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
-                        _rctx.loadVerifyFile("echo-ca-cert.pem"/*"/etc/pki/tls/certs/ca-bundle.crt"*/);
-                        _rctx.loadCertificateFile("echo-server-cert.pem");
-                        _rctx.loadPrivateKeyFile("echo-server-key.pem");
-                        return ErrorCodeT();
-                    },
-                    frame::mprpc::openssl::NameCheckSecureStart{"echo-client"}//does nothing - OpenSSL does not check for hostname on SSL_accept
-                );
-            }
-
-            if(_compress){
-                frame::mprpc::snappy::setup(cfg);
-            }
-
-            err = ctx->ipcservice.reconfigure(std::move(cfg));
-
-            if (err) {
-                ctx->manager.stop();
-                return -2;
-            }
-            
-            return ctx->ipcservice.configuration().server.listenerPort();
-        }
-    }
+int start(const bool _secure, const bool _compress, const std::string &_listen_addr){
+    ErrorConditionT     err;
     
-    void stop(const bool _wait){
-        ctx->manager.stop();
-        ctx->scheduler.stop(_wait);
-        ctx.reset();
+    ctx.reset(new Context);
+    
+    ctx->scheduler.start(1);
+    
+    {
+        auto proto = frame::mprpc::serialization_v3::create_protocol<reflection::v1::metadata::Variant, uint8_t>(
+            reflection::v1::metadata::factory,
+            [&](auto& _rmap) {
+                auto lambda = [&](const uint8_t _id, const std::string_view _name, auto const& _rtype) {
+                    using TypeT = typename std::decay_t<decltype(_rtype)>::TypeT;
+                    _rmap.template registerMessage<TypeT>(_id, _name, complete_message<TypeT>);
+                };
+                bench::configure_protocol(lambda);
+            });
+        frame::mprpc::Configuration cfg(ctx->scheduler, proto);
+
+        cfg.server.listener_address_str = _listen_addr;
+
+        cfg.server.connection_start_state = frame::mprpc::ConnectionState::Active;
+        cfg.connection_recv_buffer_start_capacity_kb = 64;
+        cfg.connection_send_buffer_start_capacity_kb = 64;
+        
+        if(_secure){
+            frame::mprpc::openssl::setup_server(
+                cfg,
+                [](frame::aio::openssl::Context &_rctx) -> ErrorCodeT{
+                    _rctx.loadVerifyFile("echo-ca-cert.pem"/*"/etc/pki/tls/certs/ca-bundle.crt"*/);
+                    _rctx.loadCertificateFile("echo-server-cert.pem");
+                    _rctx.loadPrivateKeyFile("echo-server-key.pem");
+                    return ErrorCodeT();
+                },
+                frame::mprpc::openssl::NameCheckSecureStart{"echo-client"}//does nothing - OpenSSL does not check for hostname on SSL_accept
+            );
+        }
+
+        if(_compress){
+            frame::mprpc::snappy::setup(cfg);
+        }
+
+        ctx->ipcservice.start(std::move(cfg));
+        
+        return ctx->ipcservice.configuration().server.listenerPort();
     }
+}
+
+void stop(const bool _wait){
+    ctx->manager.stop();
+    ctx->scheduler.stop(_wait);
+    ctx.reset();
+}
 }//namespace bench

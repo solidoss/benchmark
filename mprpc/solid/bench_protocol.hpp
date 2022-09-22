@@ -3,7 +3,8 @@
 
 #include "solid/frame/mprpc/mprpccontext.hpp"
 #include "solid/frame/mprpc/mprpcmessage.hpp"
-#include "solid/frame/mprpc/mprpcprotocol_serialization_v2.hpp"
+#include "solid/reflection/v1/reflection.hpp"
+#include "solid/frame/mprpc/mprpcprotocol_serialization_v3.hpp"
 
 #include <vector>
 #include <string>
@@ -27,23 +28,18 @@ struct Message : solid::frame::mprpc::Message {
     {
     }
 
-    SOLID_PROTOCOL_V2(_s, _rthis, _rctx, _name)
+    SOLID_REFLECT_V1(_rr, _rthis, _rctx)
     {
-        _s.add(_rthis.str, _rctx, "str");
-        _s.add(_rthis.vec, _rctx,  "vec");
+        _rr.add(_rthis.str, _rctx, 1, "str");
+        _rr.add(_rthis.vec, _rctx, 2, "vec");
     }
 };
 
-using ProtocolT = solid::frame::mprpc::serialization_v2::Protocol<uint8_t>;
-
-template <class R>
-inline void protocol_setup(R _r, ProtocolT& _rproto)
+template <class Reg>
+inline void configure_protocol(Reg _rreg)
 {
-    _rproto.null(static_cast<ProtocolT::TypeIdT>(0));
-
-    _r(_rproto, solid::TypeToType<Message>(), 1);
+    _rreg(1, "Message", solid::TypeToType<Message>());
 }
-
 
 } //namespace ipc_echo
 

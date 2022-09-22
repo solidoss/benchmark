@@ -7,6 +7,8 @@
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
 
+#include "solid/utility/workpool.hpp"
+
 #include "solid/frame/aio/aioresolver.hpp"
 
 #include <atomic>
@@ -38,7 +40,7 @@ namespace{
         
         frame::Manager              manager;
         frame::mprpc::ServiceT      ipcservice;
-        FunctionWorkPool            fwp;
+        lockfree::CallPoolT<void(), void> cwp{WorkPoolConfiguration(1)};
         frame::aio::Resolver        resolver;
         
         StringVectorT               line_vec;
@@ -55,7 +57,7 @@ namespace{
         AtomicSizeT                 tokens_transferred;
         atomic<uint64_t>            payload_trasferred;
 
-        Context():ipcservice(manager), fwp(WorkPoolConfiguration()), resolver(fwp), ramp_up_connection_count(0), ramp_down_connection_count(0), pending_ramp_down_connection_count(0), messages_transferred(0), tokens_transferred(0),
+        Context():ipcservice(manager), resolver([this](std::function<void()>&& _fnc) { cwp.push(std::move(_fnc)); }), ramp_up_connection_count(0), ramp_down_connection_count(0), pending_ramp_down_connection_count(0), messages_transferred(0), tokens_transferred(0),
         payload_trasferred(0){
         }
         
@@ -104,7 +106,7 @@ namespace{
             _rsent_msg_ptr->str = ctx->line_vec[con_val.first % ctx->line_vec.size()];
             ++con_val.first;
             
-            _rctx.service().sendMessage(_rctx.recipientId(), std::move(_rsent_msg_ptr), {frame::mprpc::MessageFlagsE::WaitResponse});
+            _rctx.service().sendMessage(_rctx.recipientId(), std::move(_rsent_msg_ptr), {frame::mprpc::MessageFlagsE::AwaitResponse});
         }else if(con_val.second == 1){
             --con_val.second;
         }else{
@@ -147,120 +149,104 @@ namespace{
         if(crt_idx < ctx->connection_count){
             solid_dbg(logger, Info, _rctx.recipientId());
             _rctx.any() = make_pair(crt_idx + 2, ctx->loop_count - 1);
-            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[crt_idx % ctx->line_vec.size()]), {frame::mprpc::MessageFlagsE::WaitResponse});
-            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]), {frame::mprpc::MessageFlagsE::WaitResponse});
+            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[crt_idx % ctx->line_vec.size()]), {frame::mprpc::MessageFlagsE::AwaitResponse});
+            _rctx.service().sendMessage(_rctx.recipientId(), std::make_shared<bench::Message>(ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]), {frame::mprpc::MessageFlagsE::AwaitResponse});
         }
     }
-
-    struct MessageSetup {
-        void operator()(bench::ProtocolT& _rprotocol, TypeToType<bench::Message> _t2t, const bench::ProtocolT::TypeIdT& _rtid)
-        {
-            _rprotocol.registerMessage<bench::Message>(complete_message<bench::Message>, _rtid);
-        }
-    };
     
 }//namespace
     
-    int start(
-        const bool _secure, const bool _compress,
-        const std::string &_connect_addr,
-        const std::string &_default_port,
-        const size_t _connection_count, const size_t _loop_count,
-        const std::string &_text_file,
-        const bool _print_response){
-        
-        solid_log(logger, Info, "");
-        ctx.reset(new Context);
-        {
-            ifstream ifs(_text_file);
-            if(ifs){
-                while(!ifs.eof()){
-                    ctx->line_vec.emplace_back();
-                    getline(ifs, ctx->line_vec.back());
-                    if(ctx->line_vec.back().empty()){
-                        ctx->line_vec.pop_back();
-                    }
+int start(
+    const bool _secure, const bool _compress,
+    const std::string &_connect_addr,
+    const std::string &_default_port,
+    const size_t _connection_count, const size_t _loop_count,
+    const std::string &_text_file,
+    const bool _print_response){
+    
+    solid_log(logger, Info, "");
+    ctx.reset(new Context);
+    {
+        ifstream ifs(_text_file);
+        if(ifs){
+            while(!ifs.eof()){
+                ctx->line_vec.emplace_back();
+                getline(ifs, ctx->line_vec.back());
+                if(ctx->line_vec.back().empty()){
+                    ctx->line_vec.pop_back();
                 }
-            }else{
-                return -1;
             }
-        }
-        
-        ErrorConditionT     err;
-        
-        err = ctx->scheduler.start(1);
-
-        if (err) {
-            return -2;
-        }
-        
-        {
-            auto                        proto = bench::ProtocolT::create();
-            frame::mprpc::Configuration cfg(ctx->scheduler, proto);
-
-            bench::protocol_setup(MessageSetup(), *proto);
-            
-            cfg.pool_max_active_connection_count = _connection_count;
-
-            cfg.client.name_resolve_fnc = frame::mprpc::InternetResolverF(ctx->resolver, _default_port.c_str());
-
-            cfg.client.connection_start_state = frame::mprpc::ConnectionState::Active;
-            
-            cfg.connection_stop_fnc         = &connection_stop;
-            cfg.client.connection_start_fnc = &connection_start;
-            cfg.connection_recv_buffer_start_capacity_kb = 64;
-            cfg.connection_send_buffer_start_capacity_kb = 64;
-            
-            if(_secure){
-                frame::mprpc::openssl::setup_client(
-                    cfg,
-                    [](frame::aio::openssl::Context& _rctx) -> ErrorCodeT {
-                        _rctx.loadVerifyFile("echo-ca-cert.pem");
-                        _rctx.loadCertificateFile("echo-client-cert.pem");
-                        _rctx.loadPrivateKeyFile("echo-client-key.pem");
-                        return ErrorCodeT();
-                    },
-                    frame::mprpc::openssl::NameCheckSecureStart{"echo-server"});
-            }
-
-            if(_compress){
-                frame::mprpc::snappy::setup(cfg);
-            }
-
-            err = ctx->ipcservice.reconfigure(std::move(cfg));
-
-            if (err) {
-                ctx->manager.stop();
-                return -4;
-            }
-            
-            err = ctx->ipcservice.createConnectionPool(_connect_addr.c_str(), _connection_count);
-            
-            if (err) {
-                ctx->manager.stop();
-                return -5;
-            }
-            ctx->loop_count = _loop_count;
-            ctx->ramp_down_connection_count = _connection_count;
-            ctx->connection_count = _connection_count;
-            ctx->print_response = _print_response;
-            return 0;
+        }else{
+            return -1;
         }
     }
     
-    void wait(){
-        unique_lock<mutex> lock(ctx->mtx);
-
-        if (!ctx->cnd.wait_for(lock, std::chrono::seconds(1000), []() { return ctx->ramp_down_connection_count == 0; })) {
-            solid_throw("Process is taking too long.");
-        }
+    ctx->scheduler.start(1);
+    
+    {
+        auto proto = frame::mprpc::serialization_v3::create_protocol<reflection::v1::metadata::Variant, uint8_t>(
+        reflection::v1::metadata::factory,
+        [&](auto& _rmap) {
+            auto lambda = [&](const uint8_t _id, const std::string_view _name, auto const& _rtype) {
+                using TypeT = typename std::decay_t<decltype(_rtype)>::TypeT;
+                _rmap.template registerMessage<TypeT>(_id, _name, complete_message<TypeT>);
+            };
+            bench::configure_protocol(lambda);
+        });
+        frame::mprpc::Configuration cfg(ctx->scheduler, proto);
         
+        cfg.pool_max_active_connection_count = _connection_count;
+
+        cfg.client.name_resolve_fnc = frame::mprpc::InternetResolverF(ctx->resolver, _default_port.c_str());
+
+        cfg.client.connection_start_state = frame::mprpc::ConnectionState::Active;
+        
+        cfg.connection_stop_fnc         = &connection_stop;
+        cfg.client.connection_start_fnc = &connection_start;
+        cfg.connection_recv_buffer_start_capacity_kb = 64;
+        cfg.connection_send_buffer_start_capacity_kb = 64;
+        
+        if(_secure){
+            frame::mprpc::openssl::setup_client(
+                cfg,
+                [](frame::aio::openssl::Context& _rctx) -> ErrorCodeT {
+                    _rctx.loadVerifyFile("echo-ca-cert.pem");
+                    _rctx.loadCertificateFile("echo-client-cert.pem");
+                    _rctx.loadPrivateKeyFile("echo-client-key.pem");
+                    return ErrorCodeT();
+                },
+                frame::mprpc::openssl::NameCheckSecureStart{"echo-server"});
+        }
+
+        if(_compress){
+            frame::mprpc::snappy::setup(cfg);
+        }
+
+        ctx->ipcservice.start(std::move(cfg));
+        
+        ctx->ipcservice.createConnectionPool(_connect_addr.c_str(), _connection_count);
+        
+        ctx->loop_count = _loop_count;
+        ctx->ramp_down_connection_count = _connection_count;
+        ctx->connection_count = _connection_count;
+        ctx->print_response = _print_response;
+        return 0;
+    }
+}
+
+void wait(){
+    unique_lock<mutex> lock(ctx->mtx);
+
+    if (!ctx->cnd.wait_for(lock, std::chrono::seconds(1000), []() { return ctx->ramp_down_connection_count == 0; })) {
+        solid_throw("Process is taking too long.");
     }
     
-    void stop(const bool _wait){
-        ctx->manager.stop();
-        ctx->scheduler.stop(_wait);
-        ctx.reset();
-    }
+}
+
+void stop(const bool _wait){
+    ctx->manager.stop();
+    ctx->scheduler.stop(_wait);
+    ctx.reset();
+}
 }//namespace bench
 

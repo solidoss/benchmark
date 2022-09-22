@@ -1,6 +1,3 @@
-if(NOT MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-endif()
 
 list(APPEND CMAKE_PREFIX_PATH "${EXTERNAL_PATH}")
 
@@ -36,18 +33,19 @@ add_custom_target(grpc_bench_text
 )
 
 # Protobuf
-set(protobuf_MODULE_COMPATIBLE TRUE)
-find_package(protobuf CONFIG REQUIRED)
+set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
+#set(protobuf_MODULE_COMPATIBLE TRUE)
+find_package(protobuf REQUIRED)
+include_directories(${Protobuf_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 message(STATUS "Using protobuf ${protobuf_VERSION}")
 
 # gRPC
-find_package(gRPC CONFIG REQUIRED)
+find_package(gRPC REQUIRED)
 message(STATUS "Using gRPC ${gRPC_VERSION}")
 
 # gRPC C++ plugin
-get_target_property(gRPC_CPP_PLUGIN_EXECUTABLE gRPC::grpc_cpp_plugin
-    IMPORTED_LOCATION_RELEASE)
-
+set(gRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 
 # Proto file
 get_filename_component(bench_proto "bench.proto" ABSOLUTE)

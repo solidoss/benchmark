@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 #-----------------------------------------------------------------
 # The project
@@ -21,6 +21,7 @@ set(EXTERNAL_PATH "${UEXTERNAL}/" CACHE PATH "External prerequisites path")
 
 message("Using prerequisites from: \"${EXTERNAL_PATH}\"")
 
+list(APPEND CMAKE_PREFIX_PATH ${EXTERNAL_PATH})
 
 set(SolidFrame_DIR "${EXTERNAL_PATH}/lib/cmake/SolidFrame" CACHE PATH "SolidFrame CMake configuration dir")
 find_package(SolidFrame 3)
@@ -84,6 +85,14 @@ if(CMAKE_SYSTEM MATCHES "Windows*")
     message("Detected system ON_WINDOWS")
     add_definitions(-D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00)
 endif(CMAKE_SYSTEM MATCHES "Windows*")
+
+
+###############################################################################
+# C++ Standard
+###############################################################################
+
+set(CMAKE_CXX_STANDARD 17)
+
 #-----------------------------------------------------------------
 # Global include directories
 #-----------------------------------------------------------------
