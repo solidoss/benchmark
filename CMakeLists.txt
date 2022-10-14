@@ -32,6 +32,7 @@ else()
 endif()
 
 include(ExternalProject)
+include(cmake/build_cxxopts.cmake)
 
 if(EXTERNAL_PATH STREQUAL "")
     set(EXTERNAL_PATH "${CMAKE_CURRENT_BINARY_DIR}/external")
@@ -122,5 +123,6 @@ include(CTest)
 #-----------------------------------------------------------------
 add_subdirectory(serialization)
 add_subdirectory(mprpc)
+add_subdirectory(aio)
 
 include(cmake/source-format.cmake)
