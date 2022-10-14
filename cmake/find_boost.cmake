@@ -21,6 +21,7 @@ else()
             chrono
             thread
             filesystem
+            serialization
             program_options
     )
     message("\n-- Boost version: ${Boost_VERSION_STRING}\n")

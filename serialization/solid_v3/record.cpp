@@ -2,22 +2,16 @@
 #include <sstream>
 using namespace std;
 
-namespace solid_v2_test {
-
-const TypeMapT& type_map()
-{
-    static const TypeMapT tm;
-    return tm;
-}
+namespace solid_v3_test {
 
 void to_string(Record& record, std::string& data)
 {
-    SerializerT s = type_map().createSerializer();
+    SerializerT s{solid::reflection::metadata::factory};
     to_string(s, record, data);
 }
 void from_string(Record& record, const std::string& data)
 {
-    DeserializerT d = type_map().createDeserializer();
+    DeserializerT d{solid::reflection::metadata::factory};
     from_string(d, record, data);
 }
 
@@ -36,7 +30,7 @@ void to_string(SerializerT& _rs, Record& record, std::string& data)
     _rs.run(
         oss,
         [&record](SerializerT& _rs, Context& _rctx) {
-            _rs.add(record, _rctx, "record");
+            _rs.add(record, _rctx, 1, "record");
         },
         ctx);
 
@@ -55,7 +49,7 @@ void from_string(DeserializerT& _rd, Record& record, const std::string& data)
     _rd.run(
         data.data(), data.size(),
         [&record](DeserializerT& _rd, Context& _rctx) {
-            _rd.add(record, _rctx, "record");
+            _rd.add(record, _rctx, 1, "record");
         },
         ctx);
 }
