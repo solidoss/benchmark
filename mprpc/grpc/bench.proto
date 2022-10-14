@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package bench;
+
+// The tokenize service definition.
+service Tokenizer {
+  rpc Tokenize (BenchMessage) returns (BenchMessage) {}
+}
+
+message BenchMessage {
+  string text = 1;
+  repeated string tokens = 2;
+}
+
