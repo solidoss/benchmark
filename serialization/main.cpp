@@ -14,6 +14,7 @@
 #include "cereal/record.hpp"
 #include "data.hpp"
 #include "solid_v3/record.hpp"
+#include "solid/system/log.hpp"
 
 using namespace std;
 
@@ -186,7 +187,7 @@ int main(int argc, char** argv)
 {
     if (argc < 2) {
         std::cout << "usage: " << argv[0]
-                  << " N [boost solid solid_v2 cereal cerealp]";
+                  << " N [boost solid_v3 cereal cerealp]";
         std::cout << std::endl
                   << std::endl;
         std::cout << "arguments: " << std::endl;
@@ -212,7 +213,9 @@ int main(int argc, char** argv)
             names.insert(argv[i]);
         }
     }
-
+#ifdef SOLID_HAS_DEBUG
+    //solid::log_start(std::cerr, {".*:VIEWX"});
+#endif
     std::cout << "performing " << iterations << " iterations" << std::endl
               << std::endl;
 
