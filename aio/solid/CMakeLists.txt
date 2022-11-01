@@ -21,3 +21,12 @@ target_link_libraries (solid_echo_server
     SolidFrame::solid_system
     ${SYSTEM_BASIC_LIBRARIES}
 )
+
+#add_test(NAME SolidEcho100 COMMAND bench_test -s 0 --compress 0 -N 100 -t ../test_1.txt)
+add_test(SolidEcho100_1000 sh -c "(trap 'kill 0' SIGINT; ./solid_echo_server --count 100 & ../echo_client -N 100 -c localhost:2000 -R 1000)")
+add_test(SolidEcho200_1000 sh -c "(trap 'kill 0' SIGINT; ./solid_echo_server --count 200 & ../echo_client -N 200 -c localhost:2000 -R 1000)")
+add_test(SolidEcho400_1000 sh -c "(trap 'kill 0' SIGINT; ./solid_echo_server --count 400 & ../echo_client -N 400 -c localhost:2000 -R 1000)")
+
+add_test(SolidRelayEcho100_1000 sh -c "(trap 'kill 0' SIGINT; ./solid_echo_server --count 100 & ./solid_relay_server --count 100 & ../echo_client -N 100 -c localhost:3000 -R 1000)")
+add_test(SolidRelayEcho200_1000 sh -c "(trap 'kill 0' SIGINT; ./solid_echo_server --count 200 & ./solid_relay_server --count 200 & ../echo_client -N 200 -c localhost:3000 -R 1000)")
+add_test(SolidRelayEcho400_1000 sh -c "(trap 'kill 0' SIGINT; ./solid_echo_server --count 400 & ./solid_relay_server --count 400 & ../echo_client -N 400 -c localhost:3000 -R 1000)")

@@ -121,8 +121,8 @@ include(CTest)
 #-----------------------------------------------------------------
 # Project subdirectories
 #-----------------------------------------------------------------
+add_subdirectory(aio)
 add_subdirectory(serialization)
 add_subdirectory(mprpc)
-add_subdirectory(aio)
 
 include(cmake/source-format.cmake)

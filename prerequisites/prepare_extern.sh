@@ -26,7 +26,7 @@ printUsage()
     echo
 }
 
-BOOST_ADDR="http://sourceforge.net/projects/boost/files/boost/1.67.0/boost_1_67_0.tar.bz2"
+BOOST_ADDR="https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.bz2"
 OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0h.tar.gz"
 CARES_ADDR="https://c-ares.haxx.se/download/c-ares-1.14.0.tar.gz"
 PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz"
@@ -105,13 +105,13 @@ buildBoost()
         ./b2 --layout=system  --prefix="$EXT_DIR" --exec-prefix="$EXT_DIR" link=static threading=multi $VARIANT_BUILD install
         echo
     elif    [[ "$SYSTEM" =~ "MINGW" ]]; then
-        if [ $BIT64 = true ]; then
+        if [ $BIT64 ]; then
             BOOST_ADDRESS_MODEL="64"
         else
             BOOST_ADDRESS_MODEL="32"
         fi
         
-        ./bootstrap.bat vc141
+        ./bootstrap.bat
         ./b2 --abbreviate-paths --hash address-model="$BOOST_ADDRESS_MODEL" variant="$VARIANT_BUILD" link=static threading=multi --prefix="$EXT_DIR" install
     else
         sh bootstrap.sh
@@ -119,11 +119,14 @@ buildBoost()
         echo
     fi
     
+    cd ..
+    if [ ! $NOCLEANUP ]; then
+        rm -rf "$BOOST_DIR"
+    fi
     
     echo
     echo "Done BOOST!"
     echo
-    cd ..
 }
 
 buildOpenssl()

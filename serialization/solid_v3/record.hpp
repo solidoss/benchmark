@@ -1,10 +1,10 @@
 
 #pragma once
 
+#include <deque>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <deque>
 
 #include <stdint.h>
 
@@ -37,9 +37,8 @@ public:
     }
 };
 
-using SerializerT                 = solid::serialization::v3::binary::Serializer<solid::reflection::metadata::Variant<Context>, decltype(solid::reflection::metadata::factory), Context, uint8_t>;
-using DeserializerT               = solid::serialization::v3::binary::Deserializer<solid::reflection::metadata::Variant<Context>, decltype(solid::reflection::metadata::factory), Context, uint8_t>;
-    
+using SerializerT   = solid::serialization::v3::binary::Serializer<solid::reflection::metadata::Variant<Context>, decltype(solid::reflection::metadata::factory), Context, uint8_t>;
+using DeserializerT = solid::serialization::v3::binary::Deserializer<solid::reflection::metadata::Variant<Context>, decltype(solid::reflection::metadata::factory), Context, uint8_t>;
 
 void to_string(Record& record, std::string& data);
 void from_string(Record& record, const std::string& data);
@@ -47,4 +46,4 @@ void from_string(Record& record, const std::string& data);
 void to_string(SerializerT& _rs, Record& record, std::string& data);
 void from_string(DeserializerT& _rd, Record& record, const std::string& data);
 
-} // namespace solid_v2_test
+} // namespace solid_v3_test

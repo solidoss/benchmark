@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <cereal/types/string.hpp>
 #include <cereal/types/deque.hpp>
+#include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
+#include <deque>
 #include <sstream>
 #include <stdint.h>
 #include <string>
-#include <deque>
 #include <vector>
 
 namespace cereal_test {
@@ -32,7 +32,8 @@ private:
     friend class cereal::access;
 
     template <typename Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive& ar)
+    {
         ar(ids, strings);
     }
 };

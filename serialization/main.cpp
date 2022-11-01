@@ -13,8 +13,8 @@
 #include "boost/record.hpp"
 #include "cereal/record.hpp"
 #include "data.hpp"
-#include "solid_v3/record.hpp"
 #include "solid/system/log.hpp"
+#include "solid_v3/record.hpp"
 
 using namespace std;
 
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
         }
     }
 #ifdef SOLID_HAS_DEBUG
-    //solid::log_start(std::cerr, {".*:VIEWX"});
+    // solid::log_start(std::cerr, {".*:VIEWX"});
 #endif
     std::cout << "performing " << iterations << " iterations" << std::endl
               << std::endl;

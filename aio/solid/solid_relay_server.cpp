@@ -52,6 +52,7 @@ namespace {
 struct Params {
     int    listener_port;
     int    talker_port;
+    size_t connection_count = 0;
     string connect_addr_str;
     string connect_port_str;
 
@@ -63,11 +64,11 @@ struct Params {
     bool           log;
 };
 
-Params params;
-
+Params             params;
 mutex              mtx;
 condition_variable cnd;
 bool               running(true);
+atomic<size_t>     closed_connection_count{0};
 
 static void term_handler(int signum)
 {
@@ -111,6 +112,11 @@ frame::ActorIdT connection_uid(uint32_t _id)
 void connection_unregister(uint32_t _id)
 {
     connection_uid(_id);
+    if (params.connection_count && closed_connection_count.fetch_add(1) == (params.connection_count - 1)) {
+        lock_guard<mutex> lock(mtx);
+        running = false;
+        cnd.notify_all();
+    }
 }
 
 } // namespace
@@ -250,7 +256,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        if ((0)) {
+        if ((1)) {
             unique_lock<mutex> lock(mtx);
             while (running) {
                 cnd.wait(lock);
@@ -275,6 +281,7 @@ bool parseArguments(Params& _par, int argc, char* argv[])
         options.add_options()
             ("l,listen-port", "IPC Listen port", value<int>(_par.listener_port)->default_value("3000"))
             ("c,connect", "Connect address", value<string>(_par.connect_addr_str)->default_value("localhost:2000"))
+            ("count", "Stop after certain connection count", value<size_t>(_par.connection_count)->default_value("0"))
             ("M,debug-modules", "Debug logging modules", value<vector<string>>(_par.dbg_modules))
             ("A,debug-address", "Debug server address (e.g. on linux use: nc -l 2222)", value<string>(_par.dbg_addr))
             ("P,debug-port", "Debug server port (e.g. on linux use: nc -l 2222)", value<string>(_par.dbg_port))

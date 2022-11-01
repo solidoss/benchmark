@@ -36,6 +36,7 @@ struct Params {
     int            listener_port;
     int            talker_port;
     int            connect_port;
+    size_t         connection_count = 0;
     vector<string> dbg_modules;
     string         dbg_addr;
     string         dbg_port;
@@ -45,9 +46,20 @@ struct Params {
 };
 
 namespace {
+Params             params;
 mutex              mtx;
 condition_variable cnd;
 bool               running(true);
+atomic<size_t>     closed_connection_count{0};
+
+void on_connection_stop()
+{
+    if (params.connection_count && closed_connection_count.fetch_add(1) == (params.connection_count - 1)) {
+        lock_guard<mutex> lock(mtx);
+        running = false;
+        cnd.notify_all();
+    }
+}
 } // namespace
 
 static void term_handler(int signum)
@@ -197,7 +209,6 @@ bool parseArguments(Params& _par, int argc, char* argv[]);
 
 int main(int argc, char* argv[])
 {
-    Params params;
     if (parseArguments(params, argc, argv))
         return 0;
 #ifndef SOLID_ON_WINDOWS
@@ -281,7 +292,7 @@ int main(int argc, char* argv[])
 #endif
         }
 
-        if ((0)) {
+        if ((1)) {
             unique_lock<mutex> lock(mtx);
             while (running) {
                 cnd.wait(lock);
@@ -307,6 +318,7 @@ bool parseArguments(Params& _par, int argc, char* argv[])
             ("l,listen-port", "Listener port", value<int>(_par.listener_port)->default_value("2000"))
             ("t,talk-port", "Talker port", value<int>(_par.talker_port)->default_value("3000"))
             ("c,connection-port", "Connection port", value<int>(_par.connect_port)->default_value("5000"))
+            ("count", "Stop after certain connection count", value<size_t>(_par.connection_count)->default_value("0"))
             ("M,debug-modules", "Debug logging modules", value<vector<string>>(_par.dbg_modules))
             ("A,debug-address", "Debug server address (e.g. on linux use: nc -l 2222)", value<string>(_par.dbg_addr))
             ("P,debug-port", "Debug server port (e.g. on linux use: nc -l 2222)", value<string>(_par.dbg_port))
@@ -423,6 +435,8 @@ void Listener::onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd)
         } else {
             solid_log(generic_logger, Error, &rthis << " postStop " << rthis.recvcnt << " " << rthis.sendcnt);
             rthis.postStop(_rctx);
+
+            on_connection_stop();
             break;
         }
         --repeatcnt;
@@ -446,6 +460,7 @@ void Listener::onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd)
     } else {
         solid_log(generic_logger, Error, &rthis << " postStop " << rthis.recvcnt << " " << rthis.sendcnt);
         rthis.postStop(_rctx);
+        on_connection_stop();
     }
 }
 
