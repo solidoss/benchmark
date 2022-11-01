@@ -51,7 +51,7 @@ target_link_libraries(bench_server
     bench_server_engine
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
-    ${SYS_BASIC_LIBS}
+    ${SYSTEM_BASIC_LIBRARIES}
 )
 
 ## Client =====================================================================
@@ -73,7 +73,7 @@ target_link_libraries(bench_client
     bench_client_engine
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
-    ${SYS_BASIC_LIBS}
+    ${SYSTEM_BASIC_LIBRARIES}
 )
 
 ## Test =====================================================================
@@ -88,7 +88,7 @@ target_link_libraries(bench_test
     bench_server_engine
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
-    ${SYS_BASIC_LIBS}
+    ${SYSTEM_BASIC_LIBRARIES}
     ${SYS_DYNAMIC_LOAD_LIB}
 )
 

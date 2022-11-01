@@ -151,15 +151,15 @@ void solid_serialization_v3_test(size_t iterations)
         r1.strings.push_back(kStringValue);
     }
 
-    SerializerT   s{solid::reflection::metadata::factory};
-    DeserializerT d{solid::reflection::metadata::factory};
+    solid_v3_test::SerializerT   s{solid::reflection::metadata::factory};
+    solid_v3_test::DeserializerT d{solid::reflection::metadata::factory};
 
     std::cout << "sizeof serializer: " << sizeof(s) << std::endl;
     std::cout << "sizeof deserializer: " << sizeof(d) << std::endl;
 
     std::string serialized;
 
-    to_string(s, r1, serialized);
+    to_string(s,  r1, serialized);
     from_string(d, r2, serialized);
 
     if (r1 != r2) {
@@ -172,7 +172,7 @@ void solid_serialization_v3_test(size_t iterations)
     // char buf[256];
     for (size_t i = 0; i < iterations; i++) {
         serialized.clear();
-        to_string(s, r1, serialized);
+        to_string(s,  r1, serialized);
         from_string(d, r2, serialized);
     }
     auto finish   = std::chrono::high_resolution_clock::now();

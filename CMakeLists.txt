@@ -78,7 +78,14 @@ string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
 if(CMAKE_SYSTEM MATCHES "Linux*")
     message("Detected system ON_LINUX")
 
-    set(SYS_BASIC_LIBS pthread rt)
+    find_library(ATOMIC_LIBRARY NAMES atomic atomic.so.1 libatomic.so.1)
+    
+    if(ATOMIC_LIBRARY)
+        message("Atomic library found: ${ATOMIC_LIBRARY}")
+        list(APPEND SYSTEM_BASIC_LIBRARIES atomic)
+    endif()
+
+    set(SYSTEM_BASIC_LIBRARIES pthread rt ${ATOMIC_LIBRARY})
     set(SYS_DYNAMIC_LOAD_LIB dl)
 endif(CMAKE_SYSTEM MATCHES "Linux*")
 
