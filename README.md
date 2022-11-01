@@ -13,7 +13,7 @@ cmake -DCMAKE_BUILD_TYPE=release -DEXTERNAL_PATH=~/work/external -DSolidFrame_DI
 
 ### Results
 On a 12 gen i7, WSL Fedora 36:
-
+```
 Test project /home/vipal/work/benchmark/build/release
       Start  1: SolidEcho100_1000
  1/37 Test  #1: SolidEcho100_1000 ................   Passed    0.30 sec
@@ -91,9 +91,10 @@ Test project /home/vipal/work/benchmark/build/release
 37/37 Test #37: GrpcPlainNoComp_100_6 ............   Passed   11.16 sec
 
 100% tests passed, 0 tests failed out of 37
-
+```
 AWS aarch64:
 
+```
 Running tests...
 Test project /home/ec2-user/work/benchmark/build/release
       Start  1: SolidEcho100_1000
@@ -172,4 +173,4 @@ Test project /home/ec2-user/work/benchmark/build/release
 37/37 Test #37: GrpcPlainNoComp_100_6 ............   Passed   49.55 sec
 
 100% tests passed, 0 tests failed out of 37
-
+```
