@@ -80,12 +80,13 @@ if(CMAKE_SYSTEM MATCHES "Linux*")
 
     find_library(ATOMIC_LIBRARY NAMES atomic atomic.so.1 libatomic.so.1)
     
+    set(SYSTEM_BASIC_LIBRARIES pthread rt)
+    
     if(ATOMIC_LIBRARY)
         message("Atomic library found: ${ATOMIC_LIBRARY}")
         list(APPEND SYSTEM_BASIC_LIBRARIES atomic)
     endif()
 
-    set(SYSTEM_BASIC_LIBRARIES pthread rt ${ATOMIC_LIBRARY})
     set(SYS_DYNAMIC_LOAD_LIB dl)
 endif(CMAKE_SYSTEM MATCHES "Linux*")
 

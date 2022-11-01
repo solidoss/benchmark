@@ -48,7 +48,7 @@ inline void to_string(SerializerT& _rs, Record& record, std::string& data)
 
     _rs.clear();
 
-    Context ctx;
+    Context            ctx;
     std::ostringstream oss;
 
     _rs.run(
@@ -66,7 +66,7 @@ inline void from_string(DeserializerT& _rd, Record& record, const std::string& d
     record.ids.clear();
     record.strings.clear();
     Context ctx;
-    
+
     _rd.run(
         data.data(), data.size(),
         [&record](DeserializerT& _rd, Context& _rctx) {

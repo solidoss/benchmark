@@ -159,7 +159,7 @@ void solid_serialization_v3_test(size_t iterations)
 
     std::string serialized;
 
-    to_string(s,  r1, serialized);
+    to_string(s, r1, serialized);
     from_string(d, r2, serialized);
 
     if (r1 != r2) {
@@ -172,7 +172,7 @@ void solid_serialization_v3_test(size_t iterations)
     // char buf[256];
     for (size_t i = 0; i < iterations; i++) {
         serialized.clear();
-        to_string(s,  r1, serialized);
+        to_string(s, r1, serialized);
         from_string(d, r2, serialized);
     }
     auto finish   = std::chrono::high_resolution_clock::now();
