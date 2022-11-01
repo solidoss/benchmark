@@ -2,14 +2,15 @@ add_executable (boost_echo_server boost_echo_server.cpp)
 
 target_link_libraries (boost_echo_server
     ${SYSTEM_BASIC_LIBRARIES}
-    uring
+    #uring
 )
 
 add_executable (boost_relay_server boost_relay_server.cpp)
 
 target_link_libraries (boost_relay_server
     ${SYSTEM_BASIC_LIBRARIES}
-    uring
+    
+    #uring
 )
 
 add_test(BoostEcho100_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_echo_server 2000 100 & ../echo_client -N 100 -c localhost:2000 -R 1000)")
