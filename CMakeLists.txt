@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
+if(${CMAKE_VERSION} VERSION_LESS "3.27.0")
+else() 
+    cmake_policy(SET CMP0144 NEW)
+endif()
+
+if(POLICY CMP0135)
+	cmake_policy(SET CMP0135 NEW)
+	set(CMAKE_POLICY_DEFAULT_CMP0135 NEW)
+endif()
+
 #-----------------------------------------------------------------
 # The project
 #-----------------------------------------------------------------

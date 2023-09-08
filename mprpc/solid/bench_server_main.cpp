@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-    int listen_port = bench_server::start(
+    auto listen_port = bench_server::start(
         p.secure, p.compress, std::move(p.listener_addr + ':' + p.listener_port));
 
     if (listen_port > 0) {

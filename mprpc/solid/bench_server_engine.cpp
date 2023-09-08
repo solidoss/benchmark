@@ -18,7 +18,7 @@
 using namespace solid;
 using namespace std;
 
-using AioSchedulerT = frame::Scheduler<frame::aio::Reactor>;
+using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 
 namespace bench_server {
 
@@ -113,10 +113,14 @@ int start(const bool _secure, const bool _compress,
         if (_compress) {
             frame::mprpc::snappy::setup(cfg);
         }
+        
+        {
+            frame::mprpc::ServiceStartStatus start_status;
+            ctx->ipcservice.start(start_status, std::move(cfg));
 
-        ctx->ipcservice.start(std::move(cfg));
-
-        return ctx->ipcservice.configuration().server.listenerPort();
+            solid_dbg(generic_logger, Info, "server listens on: " << start_status.listen_addr_vec_.back());
+            return start_status.listen_addr_vec_.back().port();
+        }
     }
 }
 

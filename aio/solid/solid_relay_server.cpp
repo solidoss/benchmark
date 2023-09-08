@@ -18,7 +18,7 @@
 #include <thread>
 
 #include "solid/utility/event.hpp"
-#include "solid/utility/workpool.hpp"
+#include "solid/utility/threadpool.hpp"
 
 #include "cxxopts.hpp"
 
@@ -31,8 +31,10 @@ using namespace std;
 using namespace solid;
 using namespace std::placeholders;
 
-typedef frame::Scheduler<frame::aio::Reactor> AioSchedulerT;
+using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 typedef std::atomic<uint32_t>                 AtomicUint32_tT;
+using CallPoolT      = ThreadPool<Function<void()>, Function<void()>>;
+
 typedef std::unordered_map<uint32_t,
     solid::frame::ActorIdT>
     UniqueMapT;
@@ -140,7 +142,7 @@ public:
     }
 
 private:
-    void onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent) override;
+    void onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent) override;
     void onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd);
 
     void onTimer(frame::aio::ReactorContext& _rctx);
@@ -166,7 +168,7 @@ public:
     ~Connection() {}
 
 protected:
-    void onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent) override;
+    void onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent) override;
     void onStop(frame::Manager& _rm) override;
 
     static void onRecvSock1(frame::aio::ReactorContext& _rctx, size_t _sz);
@@ -223,8 +225,8 @@ int main(int argc, char* argv[])
             3,
             1024 * 1024 * 64);
     }
-    lockfree::CallPoolT<void(), void> cwp{WorkPoolConfiguration(1)};
-    frame::aio::Resolver              resolver([&cwp](std::function<void()>&& _fnc) { cwp.push(std::move(_fnc)); });
+    CallPoolT            cwp{1, 100, 0, [](const size_t) {}, [](const size_t) {}};
+    frame::aio::Resolver resolver([&cwp](std::function<void()>&& _fnc) { cwp.pushOne(std::move(_fnc)); });
 
     async_resolver(&resolver);
     {
@@ -248,7 +250,7 @@ int main(int argc, char* argv[])
                 solid::ErrorConditionT err;
                 solid::frame::ActorIdT actuid;
 
-                actuid = sch.startActor(make_shared<Listener>(svc, sch, std::move(sd)), svc, make_event(GenericEvents::Start), err);
+                actuid = sch.startActor(make_shared<Listener>(svc, sch, std::move(sd)), svc, make_event(GenericEventE::Start), err);
                 solid_log(generic_logger, Info, "Started Listener actor: " << actuid.index << ',' << actuid.unique);
             } else {
                 cout << "Error creating listener socket" << endl;
@@ -319,12 +321,12 @@ bool parseArguments(Params& _par, int argc, char* argv[])
 //      Listener
 //-----------------------------------------------------------------------------
 
-/*virtual*/ void Listener::onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent)
+/*virtual*/ void Listener::onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent)
 {
     solid_log(generic_logger, Info, "event = " << _revent);
-    if (_revent == generic_event_start) {
+    if (_revent == generic_event<GenericEventE::Start>) {
         sock.postAccept(_rctx, std::bind(&Listener::onAccept, this, _1, _2));
-    } else if (_revent == generic_event_kill) {
+    } else if (_revent == generic_event<GenericEventE::Kill>) {
         postStop(_rctx);
     }
 }
@@ -345,7 +347,7 @@ void Listener::onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd)
             _rsd.enableNoDelay();
             solid::ErrorConditionT err;
 
-            rsch.startActor(make_shared<Connection>(std::move(_rsd)), rsvc, make_event(GenericEvents::Start), err);
+            rsch.startActor(make_shared<Connection>(std::move(_rsd)), rsvc, make_event(GenericEventE::Start), err);
         } else {
             // e.g. a limit of open file descriptors was reached - we sleep for 10 seconds
             // timer.waitFor(_rctx, NanoTime(10), std::bind(&Listener::onEvent, this, _1, frame::Event(EventStartE)));
@@ -377,9 +379,7 @@ struct ResolvFunc {
 
     void operator()(ResolveData& _rrd, ErrorCodeT const& _rerr)
     {
-        Event ev(make_event(GenericEvents::Message));
-
-        ev.any() = std::move(_rrd);
+        Event ev(make_event(GenericEventE::Message, std::move(_rrd)));
 
         solid_log(generic_logger, Info, this << " send resolv_message");
         rm.notify(actuid, std::move(ev));
@@ -410,10 +410,10 @@ struct MoveMessage {
     }
 };
 
-/*virtual*/ void Connection::onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent)
+/*virtual*/ void Connection::onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent)
 {
     solid_log(generic_logger, Error, this << " " << _revent);
-    if (generic_event_start == _revent) {
+    if (generic_event<GenericEventE::Start> == _revent) {
         if (params.connect_addr_str.size()) {
             // we must resolve the address then connect
             solid_log(generic_logger, Info, "async_resolve = " << params.connect_addr_str << " " << params.connect_port_str);
@@ -427,11 +427,11 @@ struct MoveMessage {
             sock1.postSendAll(_rctx, buf1, strlen(buf1), Connection::onSendId);
             sock1.postRecvSome(_rctx, buf2, 12, [this](frame::aio::ReactorContext& _rctx, size_t _sz) { return onRecvId(_rctx, 0, _sz); });
         }
-    } else if (generic_event_kill == _revent) {
+    } else if (generic_event<GenericEventE::Kill> == _revent) {
         solid_log(generic_logger, Error, this << " postStop");
         postStop(_rctx);
-    } else if (generic_event_message == _revent) {
-        MoveMessage* pmovemsg = _revent.any().cast<MoveMessage>();
+    } else if (generic_event<GenericEventE::Message> == _revent) {
+        MoveMessage* pmovemsg = _revent.cast<MoveMessage>();
         if (pmovemsg) {
             sock2.reset(_rctx, std::move(pmovemsg->sd));
             if (pmovemsg->sz) {
@@ -446,7 +446,7 @@ struct MoveMessage {
                 sock1.postRecvSome(_rctx, buf1, BufferCapacity, Connection::onRecvSock1);
             }
         }
-        ResolveData* presolvemsg = _revent.any().cast<ResolveData>();
+        ResolveData* presolvemsg = _revent.cast<ResolveData>();
         if (presolvemsg) {
             if (presolvemsg->empty()) {
                 solid_log(generic_logger, Error, this << " postStop");
@@ -600,9 +600,8 @@ void Connection::onRecvId(frame::aio::ReactorContext& _rctx, size_t _off, size_t
         } else {
             // move to a peer connection
             frame::ActorIdT actid = connection_uid(idx);
-            Event           ev(make_event(GenericEvents::Message));
             SocketDevice    sd(sock1.reset(_rctx));
-            ev.any().emplace<MoveMessage>(std::move(sd), buf2 + i, static_cast<uint8_t>(_sz - i));
+            auto            ev(make_event(GenericEventE::Message, MoveMessage{std::move(sd), buf2 + i, static_cast<uint8_t>(_sz - i)}));
             solid_log(generic_logger, Info, this << " send move_message with size = " << (_sz - i));
             _rctx.manager().notify(actid, std::move(ev));
             solid_log(generic_logger, Error, this << " postStop");

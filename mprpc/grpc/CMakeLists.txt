@@ -35,7 +35,9 @@ add_custom_target(grpc_bench_text
 # Protobuf
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 #set(protobuf_MODULE_COMPATIBLE TRUE)
-find_package(protobuf REQUIRED)
+find_package(Protobuf REQUIRED)
+find_package(utf8_range REQUIRED)
+
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 message(STATUS "Using protobuf ${protobuf_VERSION}")
@@ -73,10 +75,17 @@ add_executable(grpc_bench_server "bench_server_main.cpp" "bench_server_engine.hp
     ${bench_grpc_srcs})
 
 target_link_libraries(grpc_bench_server
+    absl::flags
+    absl::flags_parse
+    absl::absl_check
+    absl::absl_log
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY})
+    ${Boost_SYSTEM_LIBRARY}
+    utf8_range::utf8_range
+    utf8_range::utf8_validity
+)
     
 add_executable(grpc_bench_client "bench_client_main.cpp" "bench_client_engine.hpp" "bench_client_engine.cpp"
     ${bench_proto_srcs}
@@ -85,11 +94,17 @@ add_executable(grpc_bench_client "bench_client_main.cpp" "bench_client_engine.hp
 add_dependencies(grpc_bench_client grpc_bench_certs grpc_bench_text)
 
 target_link_libraries(grpc_bench_client
+    absl::flags
+    absl::flags_parse
+    absl::absl_check
+    absl::absl_log
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY})
-    
+    ${Boost_SYSTEM_LIBRARY}
+    utf8_range::utf8_range
+    utf8_range::utf8_validity
+)    
 add_executable(grpc_bench_test "bench_test_main.cpp" "bench_client_engine.hpp" "bench_client_engine.cpp" "bench_server_engine.hpp" "bench_server_engine.cpp"
     ${bench_proto_srcs}
     ${bench_grpc_srcs})
@@ -97,12 +112,19 @@ add_executable(grpc_bench_test "bench_test_main.cpp" "bench_client_engine.hpp" "
 add_dependencies(grpc_bench_test grpc_bench_certs bench_text_files)
 
 target_link_libraries(grpc_bench_test
+    absl::flags
+    absl::flags_parse
+    absl::absl_check
+    absl::absl_log
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY})
+    ${Boost_SYSTEM_LIBRARY}
+    utf8_range::utf8_range
+    utf8_range::utf8_validity
+)
 
-    ## Test suite ==============================================================
+## Test suite ==============================================================
 
 add_test(NAME GrpcPlainNoComp_100_1 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_1.txt)
 add_test(NAME GrpcPlainNoComp_100_2 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_2.txt)

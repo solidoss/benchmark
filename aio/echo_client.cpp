@@ -14,7 +14,7 @@
 #include "solid/system/socketaddress.hpp"
 #include "solid/system/socketdevice.hpp"
 #include "solid/utility/event.hpp"
-#include "solid/utility/workpool.hpp"
+#include "solid/utility/threadpool.hpp"
 
 #include "solid/system/cassert.hpp"
 
@@ -30,8 +30,9 @@
 using namespace std;
 using namespace solid;
 
-using AioSchedulerT = frame::Scheduler<frame::aio::Reactor>;
+using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 using AtomicSizeT   = atomic<size_t>;
+using CallPoolT      = ThreadPool<Function<void()>, Function<void()>>;
 
 struct Statistics {
     AtomicSizeT concnt;
@@ -129,7 +130,7 @@ public:
     }
 
 private:
-    void onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent) override;
+    void onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent) override;
     void onStop(frame::Manager& _rm) override
     {
         lock_guard<mutex> lock(mtx);
@@ -194,8 +195,8 @@ int main(int argc, char* argv[])
             1024 * 1024 * 64);
     }
 
-    lockfree::CallPoolT<void(), void> cwp{WorkPoolConfiguration(1)};
-    frame::aio::Resolver              resolver([&cwp](std::function<void()>&& _fnc) { cwp.push(std::move(_fnc)); });
+    CallPoolT            cwp{1, 100, 0, [](const size_t) {}, [](const size_t) {}};
+    frame::aio::Resolver resolver([&cwp](std::function<void()>&& _fnc) { cwp.pushOne(std::move(_fnc)); });
 
     async_resolver(&resolver);
     {
@@ -213,7 +214,7 @@ int main(int argc, char* argv[])
                 solid::frame::ActorIdT actuid;
 
                 ++concnt;
-                actuid = sch.startActor(make_shared<Connection>(i), svc, make_event(GenericEvents::Start), err);
+                actuid = sch.startActor(make_shared<Connection>(i), svc, make_event(GenericEventE::Start), err);
                 if (actuid.isInvalid()) {
                     --concnt;
                 }
@@ -314,19 +315,17 @@ struct ResolvFunc {
 
     void operator()(ResolveData& _rrd, ErrorCodeT const& _rerr)
     {
-        Event ev(make_event(GenericEvents::Message));
-
-        ev.any() = std::move(_rrd);
+        auto ev(make_event(GenericEventE::Message, std::move(_rrd)));
 
         solid_log(generic_logger, Info, this << " send resolv_message");
         rm.notify(actuid, std::move(ev));
     }
 };
 
-void Connection::onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent)
+void Connection::onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent)
 {
     solid_log(generic_logger, Info, "event = " << _revent);
-    if (_revent == generic_event_start) {
+    if (_revent == generic_event<GenericEventE::Start>) {
         if (params.connect_addr_str.size()) {
             // we must resolve the address then connect
             solid_log(generic_logger, Info, "async_resolve = " << params.connect_addr_str << " " << params.connect_port_str);
@@ -334,10 +333,10 @@ void Connection::onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent)
                 ResolvFunc(_rctx.service().manager(), _rctx.service().manager().id(*this)), params.connect_addr_str.c_str(),
                 params.connect_port_str.c_str(), 0, SocketInfo::Inet4, SocketInfo::Stream);
         }
-    } else if (_revent == generic_event_kill) {
+    } else if (_revent == generic_event<GenericEventE::Kill>) {
         postStop(_rctx);
-    } else if (generic_event_message == _revent) {
-        ResolveData* presolvemsg = _revent.any().cast<ResolveData>();
+    } else if (generic_event<GenericEventE::Message> == _revent) {
+        ResolveData* presolvemsg = _revent.cast<ResolveData>();
         if (presolvemsg) {
             if (presolvemsg->empty()) {
                 solid_log(generic_logger, Error, this << " postStop");

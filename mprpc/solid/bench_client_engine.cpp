@@ -7,7 +7,7 @@
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
 
-#include "solid/utility/workpool.hpp"
+#include "solid/utility/threadpool.hpp"
 
 #include "solid/frame/aio/aioresolver.hpp"
 
@@ -29,9 +29,10 @@ const LoggerT logger("bench_client");
 
 namespace bench_client {
 
-using AioSchedulerT = frame::Scheduler<frame::aio::Reactor>;
+using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 using StringVectorT = std::vector<std::string>;
 using AtomicSizeT   = std::atomic<size_t>;
+using CallPoolT      = ThreadPool<Function<void()>, Function<void()>>;
 
 namespace {
 
@@ -40,7 +41,7 @@ struct Context {
 
     frame::Manager                    manager;
     frame::mprpc::ServiceT            ipcservice;
-    lockfree::CallPoolT<void(), void> cwp{WorkPoolConfiguration(1)};
+    CallPoolT                         cwp{1, 100, 0, [](const size_t) {}, [](const size_t) {}};
     frame::aio::Resolver              resolver;
 
     StringVectorT line_vec;
@@ -60,7 +61,7 @@ struct Context {
     Context()
         : ipcservice(manager)
         , resolver([this](std::function<void()>&& _fnc) {
-            cwp.push(std::move(_fnc));
+            cwp.pushOne(std::move(_fnc)); 
         })
         , ramp_up_connection_count(0)
         , ramp_down_connection_count(0)

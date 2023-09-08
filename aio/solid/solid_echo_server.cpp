@@ -27,7 +27,7 @@ using namespace std;
 using namespace solid;
 using namespace std::placeholders;
 
-typedef frame::Scheduler<frame::aio::Reactor> AioSchedulerT;
+using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 
 //------------------------------------------------------------------
 //------------------------------------------------------------------
@@ -102,7 +102,7 @@ public:
     }
 
 private:
-    void onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent) override;
+    void onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent) override;
     void onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd);
 
     void onTimer(frame::aio::ReactorContext& _rctx);
@@ -143,7 +143,7 @@ public:
     ~Connection() {}
 
 protected:
-    /*virtual*/ void onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent);
+    /*virtual*/ void onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent);
     static void      onRecv(frame::aio::ReactorContext& _rctx, size_t _sz);
     static void      onSend(frame::aio::ReactorContext& _rctx);
     void             onTimer(frame::aio::ReactorContext& _rctx);
@@ -165,7 +165,7 @@ class ClientConnection : public Connection {
     ResolveData rd;
 
 private:
-    /*virtual*/ void onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent);
+    /*virtual*/ void onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent);
     void             onConnect(frame::aio::ReactorContext& _rctx);
 
 public:
@@ -191,7 +191,7 @@ public:
     ~Talker() {}
 
 private:
-    /*virtual*/ void onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent);
+    /*virtual*/ void onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent);
     void             onRecv(frame::aio::ReactorContext& _rctx, SocketAddress& _raddr, size_t _sz);
     void             onSend(frame::aio::ReactorContext& _rctx);
 
@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
                 solid::ErrorConditionT err;
                 solid::frame::ActorIdT actuid;
 
-                actuid = sch.startActor(make_shared<Listener>(svc, sch, std::move(sd)), svc, make_event(GenericEvents::Start), err);
+                actuid = sch.startActor(make_shared<Listener>(svc, sch, std::move(sd)), svc, make_event(GenericEventE::Start), err);
                 solid_log(generic_logger, Info, "Started Listener actor: " << actuid.index << ',' << actuid.unique);
             } else {
                 cout << "Error creating listener socket" << endl;
@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
                 solid::ErrorConditionT err;
                 solid::frame::ActorIdT actuid;
 
-                actuid = sch.startActor(make_shared<ClientConnection>(rd), svc, make_event(GenericEvents::Start), err);
+                actuid = sch.startActor(make_shared<ClientConnection>(rd), svc, make_event(GenericEventE::Start), err);
 
                 solid_log(generic_logger, Info, "Started Client Connection actor: " << actuid.index << ',' << actuid.unique);
             }
@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
                 solid::ErrorConditionT err;
                 solid::frame::ActorIdT actuid;
 
-                actuid = sch.startActor(make_shared<Talker>(std::move(sd)), svc, make_event(GenericEvents::Start), err);
+                actuid = sch.startActor(make_shared<Talker>(std::move(sd)), svc, make_event(GenericEventE::Start), err);
 
                 solid_log(generic_logger, Info, "Started Talker actor: " << actuid.index << ',' << actuid.unique);
             } else {
@@ -341,15 +341,15 @@ bool parseArguments(Params& _par, int argc, char* argv[])
 //      Listener
 //-----------------------------------------------------------------------------
 
-/*virtual*/ void Listener::onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent)
+/*virtual*/ void Listener::onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent)
 {
     solid_log(generic_logger, Info, "event = " << _revent);
-    if (generic_event_start == _revent) {
+    if (generic_event<GenericEventE::Start> == _revent) {
         sock.postAccept(_rctx, std::bind(&Listener::onAccept, this, _1, _2));
         // sock.postAccept(_rctx, [this](frame::aio::ReactorContext &_rctx, SocketDevice &_rsd){return onAccept(_rctx, _rsd);});
         ptimer = new TimerT(this->proxy());
         ptimer->waitUntil(_rctx, _rctx.steadyTime() + std::chrono::seconds(2), [this](frame::aio::ReactorContext& _rctx) { return onTimer(_rctx); });
-    } else if (generic_event_kill == _revent) {
+    } else if (generic_event<GenericEventE::Kill> == _revent) {
         postStop(_rctx);
     }
 }
@@ -376,7 +376,7 @@ void Listener::onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd)
             _rsd.enableNoDelay();
             solid::ErrorConditionT err;
 
-            rsch.startActor(make_shared<Connection>(std::move(_rsd)), rsvc, make_event(GenericEvents::Start), err);
+            rsch.startActor(make_shared<Connection>(std::move(_rsd)), rsvc, make_event(GenericEventE::Start), err);
 #else
             cout << "Accepted connection: " << _rsd.descriptor() << endl;
 #endif
@@ -399,12 +399,12 @@ void Listener::onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd)
 //      Connection
 //-----------------------------------------------------------------------------
 #ifdef USE_CONNECTION
-/*virtual*/ void Connection::onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent)
+/*virtual*/ void Connection::onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent)
 {
     solid_log(generic_logger, Error, this << " event = " << _revent);
-    if (generic_event_start == _revent) {
+    if (generic_event<GenericEventE::Start> == _revent) {
         sock.postRecvSome(_rctx, buf, BufferCapacity, Connection::onRecv); // fully asynchronous call
-    } else if (generic_event_kill == _revent) {
+    } else if (generic_event<GenericEventE::Kill> == _revent) {
         solid_log(generic_logger, Error, this << " postStop");
         sock.shutdown(_rctx);
         postStop(_rctx);
@@ -470,10 +470,10 @@ void Connection::onTimer(frame::aio::ReactorContext& _rctx)
 
 //-----------------------------------------------------------------------------
 
-/*virtual*/ void ClientConnection::onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent)
+/*virtual*/ void ClientConnection::onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent)
 {
     solid_log(generic_logger, Error, this << " event = " << _revent);
-    if (generic_event_start == _revent) {
+    if (generic_event<GenericEventE::Start> == _revent) {
 
         string hoststr;
         string servstr;
@@ -489,7 +489,7 @@ void Connection::onTimer(frame::aio::ReactorContext& _rctx)
         if (sock.connect(_rctx, rd.begin(), std::bind(&ClientConnection::onConnect, this, _1))) {
             onConnect(_rctx);
         }
-    } else if (generic_event_kill == _revent) {
+    } else if (generic_event<GenericEventE::Kill> == _revent) {
         solid_log(generic_logger, Error, this << " postStop");
         postStop(_rctx);
     }
@@ -511,12 +511,12 @@ void ClientConnection::onConnect(frame::aio::ReactorContext& _rctx)
 //      Talker
 //-----------------------------------------------------------------------------
 #ifdef USE_TALKER
-/*virtual*/ void Talker::onEvent(frame::aio::ReactorContext& _rctx, Event&& _revent)
+/*virtual*/ void Talker::onEvent(frame::aio::ReactorContext& _rctx, EventBase&& _revent)
 {
     solid_log(generic_logger, Info, this << " event = " << _revent);
-    if (generic_event_start == _revent) {
+    if (generic_event<GenericEventE::Start> == _revent) {
         sock.postRecvFrom(_rctx, buf, BufferCapacity, std::bind(&Talker::onRecv, this, _1, _2, _3)); // fully asynchronous call
-    } else if (generic_event_kill == _revent) {
+    } else if (generic_event<GenericEventE::Kill> == _revent) {
         solid_log(generic_logger, Error, this << " postStop");
         postStop(_rctx);
     }

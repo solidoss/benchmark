@@ -29,7 +29,7 @@ printUsage()
 BOOST_ADDR="https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.bz2"
 OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0h.tar.gz"
 CARES_ADDR="https://c-ares.haxx.se/download/c-ares-1.14.0.tar.gz"
-PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz"
+PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v24.3/protobuf-24.3.tar.gz"
 
 SYSTEM=
 BIT64=
