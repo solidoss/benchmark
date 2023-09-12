@@ -7,6 +7,10 @@ service Tokenizer {
   rpc Tokenize (BenchMessage) returns (BenchMessage) {}
 }
 
+service StreamingTokenizer {
+  rpc Tokenize (stream BenchMessage) returns (stream BenchMessage) {}
+}
+
 message BenchMessage {
   string text = 1;
   repeated string tokens = 2;

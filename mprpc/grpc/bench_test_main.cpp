@@ -14,6 +14,7 @@ struct Parameters {
     bool   secure;
     bool   compress;
     bool   print_response;
+    bool   streaming = false;
     size_t loop_count;
     size_t connection_count;
     string text_file_path;
@@ -33,7 +34,7 @@ int main(int argc, char* argv[])
     if (parseArguments(p, argc, argv))
         return 0;
 
-    int listen_port = bench_server::start(p.secure, p.compress, "localhost:9999");
+    int listen_port = bench_server::start(p.secure, p.compress, "localhost:9999", p.streaming);
 
     if (listen_port > 0) {
         cout << "Listening for connections on: localhost:9999" << endl;
@@ -44,7 +45,7 @@ int main(int argc, char* argv[])
 
     int rv = bench_client::start(p.secure, p.compress, "localhost:9999", "9999",
         p.connection_count, p.loop_count,
-        p.text_file_path, p.print_response);
+        p.text_file_path, p.print_response, p.streaming);
 
     if (rv >= 0) {
         bench_client::wait();
@@ -77,7 +78,10 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
             "Connection count")(
             "text_file,t",
             value<string>(&_par.text_file_path)->default_value("test_text.txt"),
-            "Path to text file")("print-response",
+            "Path to text file")
+            ("streaming,S", value<bool>(&_par.streaming)->implicit_value(true)->default_value(false),
+            "Streaming client-server")
+            ("print-response",
             value<bool>(&_par.print_response)
                 ->implicit_value(true)
                 ->default_value(false),

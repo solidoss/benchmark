@@ -9,6 +9,7 @@
 
 using bench::BenchMessage;
 using bench::Tokenizer;
+using bench::StreamingTokenizer;
 using grpc::Server;
 using grpc::ServerAsyncResponseWriter;
 using grpc::ServerBuilder;
@@ -20,6 +21,10 @@ using namespace std;
 
 namespace {
 class ServerImpl final {
+    std::unique_ptr<ServerCompletionQueue> cq_;
+    Tokenizer::AsyncService                service_;
+    StreamingTokenizer::AsyncService       streaming_service_;
+    std::unique_ptr<Server>                server_;
 public:
     ~ServerImpl()
     {
@@ -30,7 +35,7 @@ public:
 
     // There is no shutdown handling in this code.
     void Run(const bool _secure, const bool _compress,
-        const std::string& _listen_addr)
+        const std::string& _listen_addr, const bool _streaming)
     {
         std::string server_address(_listen_addr);
 
@@ -40,6 +45,7 @@ public:
         // Register "service_" as the instance through which we'll communicate with
         // clients. In this case it corresponds to an *asynchronous* service.
         builder.RegisterService(&service_);
+        builder.RegisterService(&streaming_service_);
         // Get hold of the completion queue used for the asynchronous communication
         // with the gRPC runtime.
         cq_ = builder.AddCompletionQueue();
@@ -48,18 +54,75 @@ public:
         std::cout << "Server listening on " << server_address << std::endl;
 
         // Proceed to the server's main loop.
+        const size_t thread_count = 3;
+        std::vector<thread> threads;
+
+        for(size_t i = 0; i < thread_count; ++i)
+        {
+            threads.emplace_back(thread{[this](){HandleRpcs();}});
+        }
+
         HandleRpcs();
+
+        for(auto &thr: threads){
+            thr.join();
+        }
     }
 
 private:
     // Class encompasing the state and logic needed to serve a request.
     class CallData {
+        // The means of communication with the gRPC runtime for an asynchronous
+        // server.
+        Tokenizer::AsyncService* service_ = nullptr;
+        StreamingTokenizer::AsyncService* streaming_service_ = nullptr;
+        // The producer-consumer queue where for asynchronous server notifications.
+        ServerCompletionQueue* cq_;
+        // Context for the rpc, allowing to tweak aspects of it such as the use
+        // of compression, authentication, as well as to send metadata back to the
+        // client.
+        ServerContext ctx_;
+
+        // What we get from the client.
+        BenchMessage req_;
+        // What we get from the client.
+        BenchMessage res_;
+
+        // The means to get back to the client.
+        ServerAsyncResponseWriter<BenchMessage> responder_;
+
+        // Let's implement a tiny state machine with the following states.
+        enum CallStatus { CREATE,
+            PROCESS,
+            FINISH };
+        CallStatus status_; // The current serving state.
+
+        CallData(Tokenizer::AsyncService* service, StreamingTokenizer::AsyncService* streaming_service, ServerCompletionQueue* cq)
+            : service_(service)
+            , streaming_service_(streaming_service)
+            , cq_(cq)
+            , responder_(&ctx_)
+            , status_(CREATE)
+        {
+            // Invoke the serving logic right away.
+            Proceed();
+        }
     public:
         // Take in the "service" instance (in this case representing an asynchronous
         // server) and the completion queue "cq" used for asynchronous communication
         // with the gRPC runtime.
         CallData(Tokenizer::AsyncService* service, ServerCompletionQueue* cq)
             : service_(service)
+            , cq_(cq)
+            , responder_(&ctx_)
+            , status_(CREATE)
+        {
+            // Invoke the serving logic right away.
+            Proceed();
+        }
+
+        CallData(StreamingTokenizer::AsyncService* service, ServerCompletionQueue* cq)
+            : streaming_service_(service)
             , cq_(cq)
             , responder_(&ctx_)
             , status_(CREATE)
@@ -79,16 +142,21 @@ private:
                 // the tag uniquely identifying the request (so that different CallData
                 // instances can serve different requests concurrently), in this case
                 // the memory address of this CallData instance.
-                service_->RequestTokenize(&ctx_, &msg_, &responder_, cq_, cq_, this);
+                if(service_){
+                    service_->RequestTokenize(&ctx_, &req_, &responder_, cq_, cq_, this);
+                }else{
+                    //TODO:
+                    //streaming_service_->RequestTokenize(&ctx_, &req_, &responder_, cq_, cq_, this);
+                }
             } else if (status_ == PROCESS) {
                 // Spawn a new CallData instance to serve new clients while we process
                 // the one for this CallData. The instance will deallocate itself as
                 // part of its FINISH state.
-                new CallData(service_, cq_);
+                new CallData(service_, streaming_service_, cq_);
 
                 // The actual processing.
                 {
-                    std::string*  pstr = msg_.release_text();
+                    std::string*  pstr = req_.release_text();
                     istringstream iss{std::move(*pstr)};
                     delete pstr;
                     pstr = nullptr;
@@ -96,43 +164,20 @@ private:
                     while (!iss.eof()) {
                         string tmp;
                         iss >> tmp;
-                        msg_.add_tokens(std::move(tmp));
+                        res_.add_tokens(std::move(tmp));
                     }
                 }
                 // And we are done! Let the gRPC runtime know we've finished, using the
                 // memory address of this instance as the uniquely identifying tag for
                 // the event.
                 status_ = FINISH;
-                responder_.Finish(msg_, Status::OK, this);
+                responder_.Finish(res_, Status::OK, this);
             } else {
                 GPR_ASSERT(status_ == FINISH);
                 // Once in the FINISH state, deallocate ourselves (CallData).
                 delete this;
             }
         }
-
-    private:
-        // The means of communication with the gRPC runtime for an asynchronous
-        // server.
-        Tokenizer::AsyncService* service_;
-        // The producer-consumer queue where for asynchronous server notifications.
-        ServerCompletionQueue* cq_;
-        // Context for the rpc, allowing to tweak aspects of it such as the use
-        // of compression, authentication, as well as to send metadata back to the
-        // client.
-        ServerContext ctx_;
-
-        // What we get from the client.
-        BenchMessage msg_;
-
-        // The means to get back to the client.
-        ServerAsyncResponseWriter<BenchMessage> responder_;
-
-        // Let's implement a tiny state machine with the following states.
-        enum CallStatus { CREATE,
-            PROCESS,
-            FINISH };
-        CallStatus status_; // The current serving state.
     }; // CallData
 
     // This can be run in multiple threads if needed.
@@ -153,24 +198,18 @@ private:
             static_cast<CallData*>(tag)->Proceed();
         }
     }
-
-    std::unique_ptr<ServerCompletionQueue> cq_;
-    Tokenizer::AsyncService                service_;
-    std::unique_ptr<Server>                server_;
 };
 
 } // namespace
 
 namespace bench_server {
 int start(const bool _secure, const bool _compress,
-    const std::string& _listen_addr)
+    const std::string& _listen_addr, const bool _streaming)
 {
-    thread thr{[](const bool _secure, const bool _compress,
-                   const std::string& _listen_addr) {
+    thread thr{[=]() {
                    ServerImpl server;
-                   server.Run(_secure, _compress, _listen_addr);
-               },
-        _secure, _compress, _listen_addr};
+                   server.Run(_secure, _compress, _listen_addr, _streaming);
+               }};
     thr.detach();
     return 1;
 }
