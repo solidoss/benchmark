@@ -12,6 +12,7 @@ using bench::Tokenizer;
 using bench::StreamingTokenizer;
 using grpc::Server;
 using grpc::ServerAsyncResponseWriter;
+using grpc::ServerAsyncReaderWriter;
 using grpc::ServerBuilder;
 using grpc::ServerCompletionQueue;
 using grpc::ServerContext;
@@ -57,6 +58,12 @@ public:
         const size_t thread_count = 3;
         std::vector<thread> threads;
 
+        if(_streaming){
+            new CallData(&streaming_service_, cq_.get());
+        }else{
+            new CallData(&service_, cq_.get());
+        }
+
         for(size_t i = 0; i < thread_count; ++i)
         {
             threads.emplace_back(thread{[this](){HandleRpcs();}});
@@ -82,7 +89,6 @@ private:
         // of compression, authentication, as well as to send metadata back to the
         // client.
         ServerContext ctx_;
-
         // What we get from the client.
         BenchMessage req_;
         // What we get from the client.
@@ -91,9 +97,14 @@ private:
         // The means to get back to the client.
         ServerAsyncResponseWriter<BenchMessage> responder_;
 
+        ServerAsyncReaderWriter<BenchMessage, BenchMessage> streaming_rw_;   
+
         // Let's implement a tiny state machine with the following states.
         enum CallStatus { CREATE,
             PROCESS,
+            STREAM_CONNECT,
+            STREAM_READ,
+            STREAM_WRITE,
             FINISH };
         CallStatus status_; // The current serving state.
 
@@ -102,6 +113,7 @@ private:
             , streaming_service_(streaming_service)
             , cq_(cq)
             , responder_(&ctx_)
+            , streaming_rw_(&ctx_)
             , status_(CREATE)
         {
             // Invoke the serving logic right away.
@@ -115,6 +127,7 @@ private:
             : service_(service)
             , cq_(cq)
             , responder_(&ctx_)
+            , streaming_rw_(&ctx_)
             , status_(CREATE)
         {
             // Invoke the serving logic right away.
@@ -125,6 +138,7 @@ private:
             : streaming_service_(service)
             , cq_(cq)
             , responder_(&ctx_)
+            , streaming_rw_(&ctx_)
             , status_(CREATE)
         {
             // Invoke the serving logic right away.
@@ -134,44 +148,69 @@ private:
         void Proceed()
         {
             if (status_ == CREATE) {
-                // Make this instance progress to the PROCESS state.
-                status_ = PROCESS;
 
-                // As part of the initial CREATE state, we *request* that the system
-                // start processing SayHello requests. In this request, "this" acts are
-                // the tag uniquely identifying the request (so that different CallData
-                // instances can serve different requests concurrently), in this case
-                // the memory address of this CallData instance.
                 if(service_){
+                    status_ = PROCESS;
                     service_->RequestTokenize(&ctx_, &req_, &responder_, cq_, cq_, this);
                 }else{
                     //TODO:
-                    //streaming_service_->RequestTokenize(&ctx_, &req_, &responder_, cq_, cq_, this);
+                    streaming_service_->RequestTokenize(&ctx_, &streaming_rw_, cq_, cq_, this);
+                    ctx_.AsyncNotifyWhenDone(this);
+                    status_ = STREAM_CONNECT;
                 }
             } else if (status_ == PROCESS) {
-                // Spawn a new CallData instance to serve new clients while we process
-                // the one for this CallData. The instance will deallocate itself as
-                // part of its FINISH state.
                 new CallData(service_, streaming_service_, cq_);
 
-                // The actual processing.
+                res_.clear_tokens();
                 {
-                    std::string*  pstr = req_.release_text();
-                    istringstream iss{std::move(*pstr)};
-                    delete pstr;
-                    pstr = nullptr;
-
+                    istringstream iss{req_.text()};
+                    
                     while (!iss.eof()) {
                         string tmp;
                         iss >> tmp;
                         res_.add_tokens(std::move(tmp));
                     }
+                    req_.clear_text();
                 }
                 // And we are done! Let the gRPC runtime know we've finished, using the
                 // memory address of this instance as the uniquely identifying tag for
                 // the event.
                 status_ = FINISH;
                 responder_.Finish(res_, Status::OK, this);
+            } else if(status_ == STREAM_READ){
+                res_.clear_tokens();
+                bool is_last = false;
+                {
+                    if(!req_.text().empty()){
+                        istringstream iss{req_.text()};
+                        
+                        while (!iss.eof()) {
+                            string tmp;
+                            iss >> tmp;
+                            res_.add_tokens(std::move(tmp));
+                        }
+                    }else{
+                        is_last = true;
+                    }
+                }
+                if(is_last){
+                    //streaming_responder_.WriteAndFinish(res_, grpc::WriteOptions(), Status::OK, this);
+                    streaming_rw_.Finish(Status::OK, this);
+                    status_ = FINISH;
+                }else{
+                    streaming_rw_.Write(res_, this);
+                    status_ = STREAM_WRITE;
+                }
+            } else if(status_ == STREAM_WRITE){
+                status_ = STREAM_READ;
+                req_.clear_text();
+                streaming_rw_.Read(&req_, this);
+            } else if(status_ == STREAM_CONNECT){
+                new CallData(service_, streaming_service_, cq_);
+
+                status_ = STREAM_READ;
+                req_.clear_text();
+                streaming_rw_.Read(&req_, this);
             } else {
                 GPR_ASSERT(status_ == FINISH);
                 // Once in the FINISH state, deallocate ourselves (CallData).
@@ -184,7 +223,6 @@ private:
     void HandleRpcs()
     {
         // Spawn a new CallData instance to serve new clients.
-        new CallData(&service_, cq_.get());
         void* tag; // uniquely identifies a request.
         bool  ok;
         while (true) {
