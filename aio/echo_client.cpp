@@ -32,7 +32,7 @@ using namespace solid;
 
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 using AtomicSizeT   = atomic<size_t>;
-using CallPoolT      = ThreadPool<Function<void()>, Function<void()>>;
+using CallPoolT     = ThreadPool<Function<void()>, Function<void()>>;
 
 struct Statistics {
     AtomicSizeT concnt;

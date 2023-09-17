@@ -3,16 +3,16 @@
 #include <grpc/support/log.h>
 #include <sstream>
 #include <thread>
-//#include <unistd.h>
+// #include <unistd.h>
 
 #include "bench.grpc.pb.h"
 
 using bench::BenchMessage;
-using bench::Tokenizer;
 using bench::StreamingTokenizer;
+using bench::Tokenizer;
 using grpc::Server;
-using grpc::ServerAsyncResponseWriter;
 using grpc::ServerAsyncReaderWriter;
+using grpc::ServerAsyncResponseWriter;
 using grpc::ServerBuilder;
 using grpc::ServerCompletionQueue;
 using grpc::ServerContext;
@@ -26,6 +26,7 @@ class ServerImpl final {
     Tokenizer::AsyncService                service_;
     StreamingTokenizer::AsyncService       streaming_service_;
     std::unique_ptr<Server>                server_;
+
 public:
     ~ServerImpl()
     {
@@ -55,23 +56,22 @@ public:
         std::cout << "Server listening on " << server_address << std::endl;
 
         // Proceed to the server's main loop.
-        const size_t thread_count = 3;
+        const size_t        thread_count = 3;
         std::vector<thread> threads;
 
-        if(_streaming){
+        if (_streaming) {
             new CallData(&streaming_service_, cq_.get());
-        }else{
+        } else {
             new CallData(&service_, cq_.get());
         }
 
-        for(size_t i = 0; i < thread_count; ++i)
-        {
-            threads.emplace_back(thread{[this](){HandleRpcs();}});
+        for (size_t i = 0; i < thread_count; ++i) {
+            threads.emplace_back(thread{[this]() { HandleRpcs(); }});
         }
 
         HandleRpcs();
 
-        for(auto &thr: threads){
+        for (auto& thr : threads) {
             thr.join();
         }
     }
@@ -81,7 +81,7 @@ private:
     class CallData {
         // The means of communication with the gRPC runtime for an asynchronous
         // server.
-        Tokenizer::AsyncService* service_ = nullptr;
+        Tokenizer::AsyncService*          service_           = nullptr;
         StreamingTokenizer::AsyncService* streaming_service_ = nullptr;
         // The producer-consumer queue where for asynchronous server notifications.
         ServerCompletionQueue* cq_;
@@ -97,7 +97,7 @@ private:
         // The means to get back to the client.
         ServerAsyncResponseWriter<BenchMessage> responder_;
 
-        ServerAsyncReaderWriter<BenchMessage, BenchMessage> streaming_rw_;   
+        ServerAsyncReaderWriter<BenchMessage, BenchMessage> streaming_rw_;
 
         // Let's implement a tiny state machine with the following states.
         enum CallStatus { CREATE,
@@ -119,6 +119,7 @@ private:
             // Invoke the serving logic right away.
             Proceed();
         }
+
     public:
         // Take in the "service" instance (in this case representing an asynchronous
         // server) and the completion queue "cq" used for asynchronous communication
@@ -149,11 +150,11 @@ private:
         {
             if (status_ == CREATE) {
 
-                if(service_){
+                if (service_) {
                     status_ = PROCESS;
                     service_->RequestTokenize(&ctx_, &req_, &responder_, cq_, cq_, this);
-                }else{
-                    //TODO:
+                } else {
+                    // TODO:
                     streaming_service_->RequestTokenize(&ctx_, &streaming_rw_, cq_, cq_, this);
                     ctx_.AsyncNotifyWhenDone(this);
                     status_ = STREAM_CONNECT;
@@ -164,7 +165,7 @@ private:
                 res_.clear_tokens();
                 {
                     istringstream iss{req_.text()};
-                    
+
                     while (!iss.eof()) {
                         string tmp;
                         iss >> tmp;
@@ -177,35 +178,35 @@ private:
                 // the event.
                 status_ = FINISH;
                 responder_.Finish(res_, Status::OK, this);
-            } else if(status_ == STREAM_READ){
+            } else if (status_ == STREAM_READ) {
                 res_.clear_tokens();
                 bool is_last = false;
                 {
-                    if(!req_.text().empty()){
+                    if (!req_.text().empty()) {
                         istringstream iss{req_.text()};
-                        
+
                         while (!iss.eof()) {
                             string tmp;
                             iss >> tmp;
                             res_.add_tokens(std::move(tmp));
                         }
-                    }else{
+                    } else {
                         is_last = true;
                     }
                 }
-                if(is_last){
-                    //streaming_responder_.WriteAndFinish(res_, grpc::WriteOptions(), Status::OK, this);
+                if (is_last) {
+                    // streaming_responder_.WriteAndFinish(res_, grpc::WriteOptions(), Status::OK, this);
                     streaming_rw_.Finish(Status::OK, this);
                     status_ = FINISH;
-                }else{
+                } else {
                     streaming_rw_.Write(res_, this);
                     status_ = STREAM_WRITE;
                 }
-            } else if(status_ == STREAM_WRITE){
+            } else if (status_ == STREAM_WRITE) {
                 status_ = STREAM_READ;
                 req_.clear_text();
                 streaming_rw_.Read(&req_, this);
-            } else if(status_ == STREAM_CONNECT){
+            } else if (status_ == STREAM_CONNECT) {
                 new CallData(service_, streaming_service_, cq_);
 
                 status_ = STREAM_READ;
@@ -245,9 +246,9 @@ int start(const bool _secure, const bool _compress,
     const std::string& _listen_addr, const bool _streaming)
 {
     thread thr{[=]() {
-                   ServerImpl server;
-                   server.Run(_secure, _compress, _listen_addr, _streaming);
-               }};
+        ServerImpl server;
+        server.Run(_secure, _compress, _listen_addr, _streaming);
+    }};
     thr.detach();
     return 1;
 }

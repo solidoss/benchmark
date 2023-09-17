@@ -15,6 +15,8 @@
 #include <condition_variable>
 #include <mutex>
 
+static void message_created();
+
 #include "bench_client_engine.hpp"
 #include "bench_protocol.hpp"
 
@@ -32,17 +34,19 @@ namespace bench_client {
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 using StringVectorT = std::vector<std::string>;
 using AtomicSizeT   = std::atomic<size_t>;
-using CallPoolT      = ThreadPool<Function<void()>, Function<void()>>;
+using CallPoolT     = ThreadPool<Function<void()>, Function<void()>>;
 
 namespace {
+
+atomic_size_t msg_count{0};
 
 struct Context {
     AioSchedulerT scheduler;
 
-    frame::Manager                    manager;
-    frame::mprpc::ServiceT            ipcservice;
-    CallPoolT                         cwp{1, 100, 0, [](const size_t) {}, [](const size_t) {}};
-    frame::aio::Resolver              resolver;
+    frame::Manager         manager;
+    frame::mprpc::ServiceT ipcservice;
+    CallPoolT              cwp{1, 100, 0, [](const size_t) {}, [](const size_t) {}};
+    frame::aio::Resolver   resolver;
 
     StringVectorT line_vec;
 
@@ -61,7 +65,7 @@ struct Context {
     Context()
         : ipcservice(manager)
         , resolver([this](std::function<void()>&& _fnc) {
-            cwp.pushOne(std::move(_fnc)); 
+            cwp.pushOne(std::move(_fnc));
         })
         , ramp_up_connection_count(0)
         , ramp_down_connection_count(0)
@@ -77,7 +81,15 @@ struct Context {
         cout << "Tokens trasferred: " << tokens_transferred << endl;
         cout << "Messages transferred: " << messages_transferred << endl;
         cout << "Payload transferred: " << payload_trasferred << endl;
+        cout << "Client Messages created: " << msg_count.load() << endl;
     }
+};
+
+auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
+    using PtrT  = std::decay_t<decltype(_rmsgptr)>;
+    using ElemT = typename PtrT::element_type;
+
+    _rmsgptr = ElemT::create();
 };
 
 unique_ptr<Context> ctx;
@@ -98,11 +110,12 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
     ++ctx->messages_transferred;
     ctx->tokens_transferred += _rrecv_msg_ptr->vec.size();
 
+#if 0
     ctx->payload_trasferred += _rsent_msg_ptr->str.size();
-
     for (const auto& v : _rrecv_msg_ptr->vec) {
         ctx->payload_trasferred += v.size();
     }
+#endif
 
     if (ctx->print_response) {
         cout << con_val.first << ':' << con_val.second << ' ';
@@ -111,6 +124,10 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
         }
         cout << endl;
     }
+
+    _rrecv_msg_ptr->str.clear();
+    _rrecv_msg_ptr->vec.clear();
+    cacheable_cache(std::move(_rrecv_msg_ptr));
 
     if (con_val.second > 1) {
         --con_val.second;
@@ -163,12 +180,12 @@ void connection_start(frame::mprpc::ConnectionContext& _rctx)
         _rctx.any() = make_pair(crt_idx + 2, ctx->loop_count - 1);
         _rctx.service().sendMessage(
             _rctx.recipientId(),
-            std::make_shared<bench::Message>(
+            std::make_shared<EnableCacheable<bench::Message>>(
                 ctx->line_vec[crt_idx % ctx->line_vec.size()]),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
         _rctx.service().sendMessage(
             _rctx.recipientId(),
-            std::make_shared<bench::Message>(
+            std::make_shared<EnableCacheable<bench::Message>>(
                 ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
     }
@@ -208,8 +225,8 @@ int start(const bool _secure, const bool _compress,
                 auto lambda = [&](const uint8_t _id, const std::string_view _name,
                                   auto const& _rtype) {
                     using TypeT = typename std::decay_t<decltype(_rtype)>::TypeT;
-                    _rmap.template registerMessage<TypeT>(_id, _name,
-                        complete_message<TypeT>);
+                    _rmap.template registerMessage<EnableCacheable<TypeT>>(_id, _name,
+                        complete_message<EnableCacheable<TypeT>>, create_message_ptr);
                 };
                 bench::configure_protocol(lambda);
             });
@@ -273,3 +290,8 @@ void stop(const bool _wait)
     ctx.reset();
 }
 } // namespace bench_client
+
+void message_created()
+{
+    ++bench_client::msg_count;
+}

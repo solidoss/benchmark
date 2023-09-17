@@ -32,8 +32,8 @@ using namespace solid;
 using namespace std::placeholders;
 
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
-typedef std::atomic<uint32_t>                 AtomicUint32_tT;
-using CallPoolT      = ThreadPool<Function<void()>, Function<void()>>;
+typedef std::atomic<uint32_t> AtomicUint32_tT;
+using CallPoolT = ThreadPool<Function<void()>, Function<void()>>;
 
 typedef std::unordered_map<uint32_t,
     solid::frame::ActorIdT>

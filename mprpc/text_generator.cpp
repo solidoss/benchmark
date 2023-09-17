@@ -105,6 +105,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
     using namespace boost::program_options;
     try {
         options_description desc("Test text generator");
+        // clang-format off
         desc.add_options()("help,h", "List program options")(
             "min-word-size,w", value<size_t>(&_par.min_word_size)->default_value(4),
             "Min word size")("max-word-size,W",
@@ -120,6 +121,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
             "word-count,c", value<size_t>(&_par.word_count)->default_value(10),
             "Word count")("file,f", value<string>(&_par.path)->default_value(""),
             "Path to text file");
+        // clang-format on
         variables_map vm;
         store(parse_command_line(argc, argv, desc), vm);
         notify(vm);

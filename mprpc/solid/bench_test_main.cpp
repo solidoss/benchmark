@@ -68,6 +68,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
     using namespace boost::program_options;
     try {
         options_description desc("Bench server");
+        // clang-format off
         desc.add_options()("help,h", "List program options")(
             "secure,s",
             value<bool>(&_par.secure)->implicit_value(true)->default_value(true),
@@ -87,6 +88,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
                 ->implicit_value(true)
                 ->default_value(false),
             "Prints the response");
+        // clang-format on
         variables_map vm;
         store(parse_command_line(argc, argv, desc), vm);
         notify(vm);

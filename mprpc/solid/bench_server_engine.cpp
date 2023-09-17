@@ -10,6 +10,8 @@
 
 #include "solid/frame/aio/aioresolver.hpp"
 
+static void message_created();
+
 #include "bench_protocol.hpp"
 #include "bench_server_engine.hpp"
 
@@ -34,6 +36,13 @@ struct Context {
     frame::mprpc::ServiceT ipcservice;
 };
 
+auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
+    using PtrT  = std::decay_t<decltype(_rmsgptr)>;
+    using ElemT = typename PtrT::element_type;
+
+    _rmsgptr = ElemT::create();
+};
+
 unique_ptr<Context> ctx;
 
 template <class M>
@@ -43,7 +52,7 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
     ErrorConditionT const&                             _rerror)
 {
     solid_dbg(generic_logger, Info, "received message on server");
-    solid_check(!_rerror);
+    solid_check(!_rerror, "error " << _rerror.message());
 
     if (_rrecv_msg_ptr) {
         solid_check(!_rsent_msg_ptr);
@@ -61,9 +70,12 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
 
     if (_rsent_msg_ptr) {
         solid_check(!_rrecv_msg_ptr);
+        _rsent_msg_ptr->str.clear();
+        _rsent_msg_ptr->vec.clear();
+        cacheable_cache(std::move(_rsent_msg_ptr));
     }
 }
-
+atomic_size_t msg_count{0};
 } // namespace
 
 int start(const bool _secure, const bool _compress,
@@ -82,8 +94,8 @@ int start(const bool _secure, const bool _compress,
                 auto lambda = [&](const uint8_t _id, const std::string_view _name,
                                   auto const& _rtype) {
                     using TypeT = typename std::decay_t<decltype(_rtype)>::TypeT;
-                    _rmap.template registerMessage<TypeT>(_id, _name,
-                        complete_message<TypeT>);
+                    _rmap.template registerMessage<EnableCacheable<TypeT>>(_id, _name,
+                        complete_message<EnableCacheable<TypeT>>, create_message_ptr);
                 };
                 bench::configure_protocol(lambda);
             });
@@ -113,7 +125,7 @@ int start(const bool _secure, const bool _compress,
         if (_compress) {
             frame::mprpc::snappy::setup(cfg);
         }
-        
+
         {
             frame::mprpc::ServiceStartStatus start_status;
             ctx->ipcservice.start(start_status, std::move(cfg));
@@ -126,8 +138,14 @@ int start(const bool _secure, const bool _compress,
 
 void stop(const bool _wait)
 {
+    cout << "Server Messages created: " << msg_count.load() << endl;
     ctx->manager.stop();
     ctx->scheduler.stop(_wait);
     ctx.reset();
 }
 } // namespace bench_server
+
+void message_created()
+{
+    ++bench_server::msg_count;
+}

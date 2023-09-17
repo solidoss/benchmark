@@ -70,6 +70,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
     using namespace boost::program_options;
     try {
         options_description desc("Bench server");
+        // clang-format off
         desc.add_options()("help,h", "List program options")(
             "debug-levels,L",
             value<string>(&_par.dbg_levels)->default_value("view"),
@@ -105,6 +106,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
                     ->implicit_value(true)
                     ->default_value(true),
                 "Use Snappy to compress communication");
+        // clang-format on
         variables_map vm;
         store(parse_command_line(argc, argv, desc), vm);
         notify(vm);

@@ -132,3 +132,10 @@ add_test(NAME GrpcPlainNoComp_100_3 COMMAND grpc_bench_test -s 0 --compress 0 -N
 add_test(NAME GrpcPlainNoComp_100_4 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_4.txt)
 add_test(NAME GrpcPlainNoComp_100_5 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_5.txt)
 add_test(NAME GrpcPlainNoComp_100_6 COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -t ../test_6.txt)
+
+add_test(NAME GrpcPlainNoComp_100_1_Stream COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -S -t ../test_1.txt)
+add_test(NAME GrpcPlainNoComp_100_2_Stream COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -S -t ../test_2.txt)
+add_test(NAME GrpcPlainNoComp_100_3_Stream COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -S -t ../test_3.txt)
+add_test(NAME GrpcPlainNoComp_100_4_Stream COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -S -t ../test_4.txt)
+add_test(NAME GrpcPlainNoComp_100_5_Stream COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -S -t ../test_5.txt)
+add_test(NAME GrpcPlainNoComp_100_6_Stream COMMAND grpc_bench_test -s 0 --compress 0 -N 100 -S -t ../test_6.txt)

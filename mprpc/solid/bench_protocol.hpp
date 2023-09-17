@@ -16,16 +16,21 @@ struct Message : solid::frame::mprpc::Message {
     std::string   str;
     StringVectorT vec;
 
-    Message() {}
+    Message()
+    {
+        message_created();
+    }
 
     Message(std::string&& _ustr)
         : str(std::move(_ustr))
     {
+        message_created();
     }
 
     Message(const std::string& _str)
         : str(_str)
     {
+        message_created();
     }
 
     SOLID_REFLECT_V1(_rr, _rthis, _rctx)

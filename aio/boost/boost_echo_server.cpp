@@ -13,14 +13,10 @@
 #include <iostream>
 #include <memory>
 #include <utility>
-//#define BOOST_ASIO_HAS_IO_URING
-//#define BOOST_ASIO_DISABLE_EPOLL
+// #define BOOST_ASIO_HAS_IO_URING
+// #define BOOST_ASIO_DISABLE_EPOLL
 
 #include <boost/asio.hpp>
-
-
-
-
 
 using boost::asio::ip::tcp;
 
@@ -140,117 +136,102 @@ using boost::asio::ip::tcp;
 
 using namespace boost;
 
-using socket_t = boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>;
+using socket_t   = boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::io_context::executor_type>;
 using acceptor_t = boost::asio::basic_socket_acceptor<boost::asio::ip::tcp, boost::asio::io_context::executor_type>;
 
-class session
-{
+class session {
 public:
-  session(socket_t socket)
-    : socket_(std::move(socket))
-  {
-  }
+    session(socket_t socket)
+        : socket_(std::move(socket))
+    {
+    }
 
-  void start()
-  {
-    do_read();
-  }
+    void start()
+    {
+        do_read();
+    }
 
 private:
-  void do_read()
-  {
-    socket_.async_read_some(boost::asio::buffer(data_, max_length),
-        [this](std::error_code ec, std::size_t length)
-        {
-          if (!ec)
-          {
-            do_write(length);
-          }
-          else
-          {
-            delete this;
-            connection_closed();
-          }
-        });
-  }
+    void do_read()
+    {
+        socket_.async_read_some(boost::asio::buffer(data_, max_length),
+            [this](std::error_code ec, std::size_t length) {
+                if (!ec) {
+                    do_write(length);
+                } else {
+                    delete this;
+                    connection_closed();
+                }
+            });
+    }
 
-  void do_write(std::size_t length)
-  {
-    asio::async_write(socket_, asio::buffer(data_, length),
-        [this](std::error_code ec, std::size_t /*length*/)
-        {
-          if (!ec)
-          {
-            do_read();
-          }
-          else
-          {
-            delete this;
-            connection_closed();
-          }
-        });
-  }
+    void do_write(std::size_t length)
+    {
+        asio::async_write(socket_, asio::buffer(data_, length),
+            [this](std::error_code ec, std::size_t /*length*/) {
+                if (!ec) {
+                    do_read();
+                } else {
+                    delete this;
+                    connection_closed();
+                }
+            });
+    }
 
-  socket_t socket_;
-  enum { max_length = 1024 * 4 };
-  char data_[max_length];
+    socket_t socket_;
+    enum { max_length = 1024 * 4 };
+    char data_[max_length];
 };
 
-class server
-{
+class server {
 public:
-  server(boost::asio::io_context& io_context, short port)
-    : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
-      socket_(io_context)
-  {
-    do_accept();
-  }
+    server(boost::asio::io_context& io_context, short port)
+        : acceptor_(io_context, tcp::endpoint(tcp::v4(), port))
+        , socket_(io_context)
+    {
+        do_accept();
+    }
 
 private:
-  void do_accept()
-  {
-    acceptor_.async_accept(socket_,
-        [this](std::error_code ec)
-        {
-          if (!ec)
-          {
-            auto ses = new session(std::move(socket_));
-            ses->start();
-          }
+    void do_accept()
+    {
+        acceptor_.async_accept(socket_,
+            [this](std::error_code ec) {
+                if (!ec) {
+                    auto ses = new session(std::move(socket_));
+                    ses->start();
+                }
 
-          do_accept();
-        });
-  }
+                do_accept();
+            });
+    }
 
-  acceptor_t acceptor_;
-  socket_t socket_;
+    acceptor_t acceptor_;
+    socket_t   socket_;
 };
 
 int main(int argc, char* argv[])
 {
-  try
-  {
-    if (argc < 2) {
-        std::cerr << "Usage: async_tcp_echo_server <port> <connection_count>\n";
-        return 1;
+    try {
+        if (argc < 2) {
+            std::cerr << "Usage: async_tcp_echo_server <port> <connection_count>\n";
+            return 1;
+        }
+
+        if (argc > 2) {
+            connection_count = atoi(argv[2]);
+            std::cout << "Connection count " << connection_count << std::endl;
+        }
+
+        boost::asio::io_context io_context{BOOST_ASIO_CONCURRENCY_HINT_UNSAFE};
+
+        server s(io_context, std::atoi(argv[1]));
+
+        io_context.run();
+    } catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << "\n";
     }
 
-    if (argc > 2) {
-        connection_count = atoi(argv[2]);
-        std::cout << "Connection count " << connection_count << std::endl;
-    }
-
-    boost::asio::io_context io_context{BOOST_ASIO_CONCURRENCY_HINT_UNSAFE};
-
-    server s(io_context, std::atoi(argv[1]));
-
-    io_context.run();
-  }
-  catch (std::exception& e)
-  {
-    std::cerr << "Exception: " << e.what() << "\n";
-  }
-
-  return 0;
+    return 0;
 }
 #endif

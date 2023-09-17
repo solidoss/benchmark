@@ -16,6 +16,7 @@ struct Parameters {
 
     bool   secure;
     bool   compress;
+    bool   streaming;
     string listener_port;
     string listener_addr;
 };
@@ -32,7 +33,7 @@ int main(int argc, char* argv[])
         return 0;
 
     int listen_port = bench_server::start(
-        p.secure, p.compress, std::move(p.listener_addr + ':' + p.listener_port));
+        p.secure, p.compress, p.listener_addr + ':' + p.listener_port, p.streaming);
 
     if (listen_port > 0) {
         cout << "Listening for connections on: " << p.listener_addr << ':'
@@ -52,6 +53,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
     using namespace boost::program_options;
     try {
         options_description desc("Bench server");
+        // clang-format off
         desc.add_options()("help,h", "List program options")(
             "listen-port,p",
             value<std::string>(&_par.listener_port)->default_value("5555"),
@@ -65,6 +67,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
             "compress",
             value<bool>(&_par.compress)->implicit_value(true)->default_value(true),
             "Compress communication");
+        // clang-format on
         variables_map vm;
         store(parse_command_line(argc, argv, desc), vm);
         notify(vm);

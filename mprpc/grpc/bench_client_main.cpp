@@ -17,6 +17,7 @@ struct Parameters {
     bool         secure;
     bool         compress;
     bool         print_response;
+    bool         streaming;
     string       connect_host;
     size_t       loop_count;
     size_t       connection_count;
@@ -39,7 +40,7 @@ int main(int argc, char* argv[])
 
     int rv = bench_client::start(p.secure, p.compress, p.connect_host,
         p.default_port, p.connection_count, p.loop_count,
-        p.text_file_path, p.print_response);
+        p.text_file_path, p.print_response, p.streaming);
 
     if (rv >= 0) {
         bench_client::wait();
@@ -58,11 +59,11 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
     using namespace boost::program_options;
     try {
         options_description desc("Bench server");
-        desc.add_options()("help,h", "List program options")(
-            "connect-host,c",
-            value<std::string>(&_par.connect_host)
-                ->default_value("localhost:" + _par.default_port),
-            "gRPC Connect Host")(
+        // clang-format off
+        desc.add_options()
+            ("help,h", "List program options")
+            ("connect-host,c", value<std::string>(&_par.connect_host)->default_value("localhost:" + _par.default_port), "gRPC Connect Host")
+            (
             "secure,s",
             value<bool>(&_par.secure)->implicit_value(true)->default_value(true),
             "Secure communication")(
@@ -73,14 +74,12 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
             "Roundtrip count per connection")(
             "connection-count,N",
             value<size_t>(&_par.connection_count)->default_value(100),
-            "Connection count")(
-            "text_file,t",
-            value<string>(&_par.text_file_path)->default_value("test_text.txt"),
-            "Path to text file")("print-response",
-            value<bool>(&_par.print_response)
-                ->implicit_value(true)
-                ->default_value(false),
-            "Prints the response");
+            "Connection count")
+            ("text_file,t", value<string>(&_par.text_file_path)->default_value("test_text.txt"), "Path to text file")
+            ("streaming,S", value<bool>(&_par.streaming)->implicit_value(true)->default_value(false), "Streaming client-server")
+            ("print-response", value<bool>(&_par.print_response)->implicit_value(true)->default_value(false), "Prints the response");
+
+        // clang-format on
         variables_map vm;
         store(parse_command_line(argc, argv, desc), vm);
         notify(vm);

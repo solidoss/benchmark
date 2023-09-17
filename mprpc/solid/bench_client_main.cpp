@@ -75,6 +75,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
     using namespace boost::program_options;
     try {
         options_description desc("Bench server");
+        // clang-format off
         desc.add_options()("help,h", "List program options")(
             "debug-levels,L",
             value<string>(&_par.dbg_levels)->default_value("view"),
@@ -122,6 +123,7 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
                 "text_file,t",
                 value<string>(&_par.text_file_path)->default_value("test_text.txt"),
                 "Path to text file");
+        // clang-format on
         variables_map vm;
         store(parse_command_line(argc, argv, desc), vm);
         notify(vm);
