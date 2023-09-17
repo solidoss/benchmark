@@ -14,7 +14,7 @@ cmake -DCMAKE_BUILD_TYPE=release -DEXTERNAL_PATH=~/work/external -DSolidFrame_DI
 ### Results
 
 On a 12 gen i7, WSL Fedora 36 (20230917):
-
+```
 Test project /home/vipal/work/benchmark/build/release
       Start  1: SolidEcho100_1000
  1/43 Test  #1: SolidEcho100_1000 ................   Passed    0.60 sec
@@ -104,7 +104,7 @@ Test project /home/vipal/work/benchmark/build/release
 43/43 Test #43: GrpcPlainNoComp_100_6_Stream .....   Passed    7.60 sec
 
 100% tests passed, 0 tests failed out of 43
-
+```
 ---------------------------------------------------------------------
 
 On a 12 gen i7, WSL Fedora 36 :
