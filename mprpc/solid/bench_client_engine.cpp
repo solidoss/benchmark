@@ -94,6 +94,8 @@ auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
 
 unique_ptr<Context> ctx;
 
+//#define USE_TWO_MESSAGES
+
 template <class M>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
     std::shared_ptr<M>&                                _rsent_msg_ptr,
@@ -138,7 +140,9 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
             {frame::mprpc::MessageFlagsE::AwaitResponse});
     } else if (con_val.second == 1) {
         --con_val.second;
+#ifdef USE_TWO_MESSAGES
     } else {
+#endif
         solid_dbg(logger, Info, _rctx.recipientId());
         // cannot directly close the connection here because the pool will create
         // another one automatically
@@ -177,17 +181,24 @@ void connection_start(frame::mprpc::ConnectionContext& _rctx)
     const size_t crt_idx = ctx->ramp_up_connection_count.fetch_add(1);
     if (crt_idx < ctx->connection_count) {
         solid_dbg(logger, Info, _rctx.recipientId());
-        _rctx.any() = make_pair(crt_idx + 2, ctx->loop_count - 1);
+#ifdef USE_TWO_MESSAGES
+        const size_t v = 1;
+#else
+        const size_t v = 0;
+#endif
+        _rctx.any() = make_pair(crt_idx + 1 + v, ctx->loop_count - v);
         _rctx.service().sendMessage(
             _rctx.recipientId(),
             std::make_shared<EnableCacheable<bench::Message>>(
                 ctx->line_vec[crt_idx % ctx->line_vec.size()]),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
+#ifdef USE_TWO_MESSAGES
         _rctx.service().sendMessage(
             _rctx.recipientId(),
             std::make_shared<EnableCacheable<bench::Message>>(
                 ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
+#endif
     }
 }
 

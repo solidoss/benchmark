@@ -85,7 +85,7 @@ int start(const bool _secure, const bool _compress,
 
     ctx.reset(new Context);
 
-    ctx->scheduler.start(1);
+    ctx->scheduler.start(3);
 
     {
         auto proto = frame::mprpc::serialization_v3::create_protocol<

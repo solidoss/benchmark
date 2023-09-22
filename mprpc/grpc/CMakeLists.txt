@@ -81,8 +81,8 @@ target_link_libraries(grpc_bench_server
     absl::absl_log
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
-    ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
+    Boost::program_options
+    Boost::system
     utf8_range::utf8_range
     utf8_range::utf8_validity
 )
@@ -100,8 +100,8 @@ target_link_libraries(grpc_bench_client
     absl::absl_log
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
-    ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
+    Boost::program_options
+    Boost::system
     utf8_range::utf8_range
     utf8_range::utf8_validity
 )    
@@ -118,8 +118,8 @@ target_link_libraries(grpc_bench_test
     absl::absl_log
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
-    ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
+    Boost::program_options
+    Boost::system
     utf8_range::utf8_range
     utf8_range::utf8_validity
 )

@@ -30,7 +30,7 @@ BOOST_ADDR="https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boo
 OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0h.tar.gz"
 CARES_ADDR="https://c-ares.haxx.se/download/c-ares-1.14.0.tar.gz"
 PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v24.3/protobuf-24.3.tar.gz"
-
+CAPNPROTO_ADDR=https://capnproto.org/capnproto-c++-1.0.1.tar.gz #"https://github.com/capnproto/capnproto/archive/refs/tags/v1.0.1.tar.gz"
 SYSTEM=
 BIT64=
 
@@ -287,6 +287,68 @@ function buildCAres
     echo
 }
 
+function buildCapNProto
+{
+    WHAT="capnproto"
+    ADDR_NAME=$CAPNPROTO_ADDR
+    echo
+    echo "Building $WHAT..."
+    echo
+
+    OLD_DIR=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Cleanup previous builds..."
+    echo
+
+    
+    echo
+    echo "Prepare the $WHAT archive..."
+    echo
+
+    ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+    if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
+        mkdir old
+        mv $ARCH_NAME old/
+        echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
+        downloadArchive $ADDR_NAME
+        ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+    fi
+    
+    echo "Extracting $WHAT [$ARCH_NAME]..."
+    extractTarGz $ARCH_NAME
+
+    DIR_NAME=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Making $WHAT [$DIR_NAME]..."
+    echo
+
+    cd $DIR_NAME
+    
+    if		[ "$SYSTEM" = "FreeBSD" ] ; then
+        echo "TODO..."
+    elif	[ "$SYSTEM" = "Darwin" ] ; then
+        echo "TODO..."
+    elif    [[ "$SYSTEM" =~ "MINGW" ]]; then
+        if [ "$BIT64" = true ]; then
+            echo "TODO..."
+        else
+            echo "TODO..."
+        fi
+        #mkdir .build
+        #cd .build
+        #cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$EXT_DIR"
+    else
+        ./configure --prefix="$EXT_DIR"
+        make -j install
+    fi
+    
+    cd ..
+    
+    echo
+    echo "Done $WHAT!"
+    echo
+}
+
 function buildBoringSSL
 {
     echo
@@ -402,6 +464,7 @@ BUILD_OPENSSL=
 BUILD_BORINGSSL=
 BUILD_C_ARES=
 BUILD_PROTOBUF=
+BUILD_CAPNPROTO=
 
 BUILD_SOMETHING=
 
@@ -435,6 +498,10 @@ while [ "$#" -gt 0 ]; do
         ;;
     --cares)
         BUILD_C_ARES="yes"
+        BUILD_SOMETHING="yes"
+        ;;
+    --capnp)
+        BUILD_CAPNPROTO="yes"
         BUILD_SOMETHING="yes"
         ;;
     --protobuf)
@@ -493,6 +560,10 @@ fi
 
 if [ $BUILD_C_ARES ]; then
     buildCAres
+fi
+
+if [ $BUILD_CAPNPROTO ]; then
+    buildCapNProto
 fi
 
 if [ $BUILD_PROTOBUF ]; then

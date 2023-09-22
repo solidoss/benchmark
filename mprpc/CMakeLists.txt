@@ -1,5 +1,6 @@
 add_subdirectory(solid)
 add_subdirectory(grpc)
+add_subdirectory(capnp)
 
 add_executable(text_generator text_generator.cpp)
 
