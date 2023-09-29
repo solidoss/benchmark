@@ -1,9 +1,10 @@
 #include "bench_server_engine.hpp"
 #include "boost/program_options.hpp"
 #include <iostream>
+#include <mutex>
 
 using namespace std;
-
+mutex gmtx;
 //-----------------------------------------------------------------------------
 //      Parameters
 //-----------------------------------------------------------------------------

@@ -94,7 +94,7 @@ auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
 
 unique_ptr<Context> ctx;
 
-//#define USE_TWO_MESSAGES
+// #define USE_TWO_MESSAGES
 
 template <class M>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,

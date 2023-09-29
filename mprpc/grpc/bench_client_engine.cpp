@@ -1,17 +1,16 @@
 #include "bench_client_engine.hpp"
 
+#include <atomic>
+#include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
-#include <thread>
-
-#include <atomic>
-#include <fstream>
-#include <sstream>
 
 #include "bench.grpc.pb.h"
 
@@ -30,26 +29,19 @@ using AtomicSizeT = std::atomic<size_t>;
 
 using namespace std;
 
-namespace {
+extern mutex gmtx;
 
+namespace {
 using StringVectorT = std::vector<std::string>;
 class TokenizerClient;
 
 // struct for keeping state and data information
 struct AsyncClientCall {
-    TokenizerClient& rclient_;
-    // Container for the data we expect from the server.
-    BenchMessage reply;
-
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
-    ClientContext context;
-
-    // Storage for the status of the RPC upon completion.
-    Status status;
-
-    std::unique_ptr<ClientAsyncResponseReader<BenchMessage>> response_reader;
-
+    TokenizerClient&                                                     rclient_;
+    BenchMessage                                                         reply;
+    ClientContext                                                        context;
+    Status                                                               status;
+    std::unique_ptr<ClientAsyncResponseReader<BenchMessage>>             response_reader;
     std::unique_ptr<ClientAsyncReaderWriter<BenchMessage, BenchMessage>> stream_rw_;
 
     enum {
@@ -118,12 +110,11 @@ public:
 
     void start()
     {
-        BenchMessage req;
-        req.set_text(rctx_.line_vec_[line_index_ % rctx_.line_vec_.size()]);
-        ++line_index_;
-
         if (stub_) {
-
+            BenchMessage req;
+            const auto   line_idx = line_index_;
+            ++line_index_;
+            req.set_text(rctx_.line_vec_[line_idx % rctx_.line_vec_.size()]);
             AsyncClientCall* call = new AsyncClientCall(*this);
 
             call->response_reader = stub_->PrepareAsyncTokenize(&call->context, req, &rctx_.cq_);
@@ -147,8 +138,10 @@ public:
                 AsyncClientCall* call = new AsyncClientCall(std::move(*_pcall));
                 delete _pcall;
                 BenchMessage req;
-                req.set_text(rctx_.line_vec_[line_index_ % rctx_.line_vec_.size()]);
+                const auto   line_idx = line_index_;
                 ++line_index_;
+                req.set_text(rctx_.line_vec_[line_idx % rctx_.line_vec_.size()]);
+                // req.set_id(line_idx);
                 --loop_count_;
                 call->response_reader = stub_->PrepareAsyncTokenize(&call->context, req, &rctx_.cq_);
 
@@ -162,21 +155,26 @@ public:
         } else {
             if (_pcall->stage_ == AsyncClientCall::STREAM_DONE_READ) {
                 ++_rmsgs;
-                _rtokens += _pcall->reply.tokens_size();
+                const auto tkn_sz = _pcall->reply.tokens_size();
+                _rtokens += tkn_sz;
                 _pcall->reply.clear_tokens();
                 --loop_count_;
                 if (loop_count_ != 0) {
                     BenchMessage req;
-                    req.set_text(rctx_.line_vec_[line_index_ % rctx_.line_vec_.size()]);
+                    const auto   line_idx = line_index_;
                     ++line_index_;
+                    const auto& txt = rctx_.line_vec_[line_idx % rctx_.line_vec_.size()];
+                    req.set_text(txt);
+                    // req.set_id(line_idx);
+                    if (false) {
+                        // lock_guard<mutex> lock(gmtx);
+                        // cout<<this_thread::get_id()<<" " << this<<" send request: "<<loop_count_<<" "<<line_idx<<" "<<txt.size()<<" "<<tkn_sz<<endl;
+                    }
 
                     _pcall->stage_ = AsyncClientCall::STREAM_DONE_WRITE;
                     _pcall->stream_rw_->Write(req, _pcall);
                 } else {
                     // Write the sentinel to let server know we're done
-                    // BenchMessage req;
-                    //_pcall->stage_ = AsyncClientCall::STREAM_DONE;
-                    //_pcall->stream_rw_->Write(req, _pcall);
                     _pcall->stage_ = AsyncClientCall::STREAM_DONE;
                     _pcall->stream_rw_->Finish(&_pcall->status, (void*)_pcall);
                     delete _pcall;
@@ -193,8 +191,10 @@ public:
             } else {
                 GPR_ASSERT(_pcall->stage_ == AsyncClientCall::STREAM_DONE_CONNECT);
                 BenchMessage req;
-                req.set_text(rctx_.line_vec_[line_index_ % rctx_.line_vec_.size()]);
+                const auto   line_idx = line_index_;
                 ++line_index_;
+                req.set_text(rctx_.line_vec_[line_idx % rctx_.line_vec_.size()]);
+                // req.set_id(line_idx);
                 _pcall->stage_ = AsyncClientCall::STREAM_DONE_WRITE;
                 _pcall->stream_rw_->Write(req, _pcall);
                 return true;
@@ -246,16 +246,15 @@ void Context::run()
         GPR_ASSERT(ok);
         // GPR_ASSERT(call->reply.tokens_size() != 0);
 
-        if (print_response) {
-            cout << "Response: ";
+        if (print_response && call->reply.tokens_size()) {
+            lock_guard<mutex> lock(gmtx);
+            // cout<< call << " Response "<<call->reply.id()<<": ";
+            cout << call << " Response: ";
             for (size_t i = 0; i < call->reply.tokens_size(); ++i) {
                 cout << '[' << call->reply.tokens(i) << ']' << ' ';
             }
             cout << endl;
         }
-
-        //++messages_transferred;
-        // tokens_transferred += call->reply.tokens_size();
 
         if (call->rclient_.step(call, messages_transferred, tokens_transferred)) {
         } else {

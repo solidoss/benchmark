@@ -20,7 +20,10 @@ using grpc::Status;
 
 using namespace std;
 
+extern mutex gmtx;
+
 namespace {
+
 class ServerImpl final {
     std::unique_ptr<ServerCompletionQueue> cq_;
     Tokenizer::AsyncService                service_;
@@ -154,14 +157,13 @@ private:
                     status_ = PROCESS;
                     service_->RequestTokenize(&ctx_, &req_, &responder_, cq_, cq_, this);
                 } else {
-                    // TODO:
+                    status_ = STREAM_CONNECT;
                     streaming_service_->RequestTokenize(&ctx_, &streaming_rw_, cq_, cq_, this);
                     ctx_.AsyncNotifyWhenDone(this);
-                    status_ = STREAM_CONNECT;
                 }
             } else if (status_ == PROCESS) {
                 new CallData(service_, streaming_service_, cq_);
-
+                // res_.set_id(req_.id());
                 res_.clear_tokens();
                 {
                     istringstream iss{req_.text()};
@@ -180,6 +182,11 @@ private:
                 responder_.Finish(res_, Status::OK, this);
             } else if (status_ == STREAM_READ) {
                 res_.clear_tokens();
+                // res_.set_id(req_.id());
+                if (false) {
+                    lock_guard<mutex> lock(gmtx);
+                    // cout<<this <<" Processing stream: "<<req_.id()<<" "<<req_.text().size()<<endl;
+                }
                 bool is_last = false;
                 {
                     if (!req_.text().empty()) {
@@ -196,11 +203,11 @@ private:
                 }
                 if (is_last) {
                     // streaming_responder_.WriteAndFinish(res_, grpc::WriteOptions(), Status::OK, this);
-                    streaming_rw_.Finish(Status::OK, this);
                     status_ = FINISH;
+                    streaming_rw_.Finish(Status::OK, this);
                 } else {
-                    streaming_rw_.Write(res_, this);
                     status_ = STREAM_WRITE;
+                    streaming_rw_.Write(res_, this);
                 }
             } else if (status_ == STREAM_WRITE) {
                 status_ = STREAM_READ;
