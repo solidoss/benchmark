@@ -33,7 +33,7 @@ using namespace std::placeholders;
 
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 typedef std::atomic<uint32_t> AtomicUint32_tT;
-using CallPoolT = ThreadPool<Function<void()>, Function<void()>>;
+using CallPoolT = ThreadPool<Function<void(), 80>, Function<void(), 80>>;
 
 typedef std::unordered_map<uint32_t,
     solid::frame::ActorIdT>
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
             3,
             1024 * 1024 * 64);
     }
-    CallPoolT            cwp{1, 100, 0, [](const size_t) {}, [](const size_t) {}};
+    CallPoolT            cwp{{1, 100, 0}, [](const size_t) {}, [](const size_t) {}};
     frame::aio::Resolver resolver([&cwp](std::function<void()>&& _fnc) { cwp.pushOne(std::move(_fnc)); });
 
     async_resolver(&resolver);

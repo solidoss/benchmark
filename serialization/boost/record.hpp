@@ -44,8 +44,8 @@ private:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        ar& ids;
-        ar& strings;
+        ar & ids;
+        ar & strings;
     }
 };
 

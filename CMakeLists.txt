@@ -110,7 +110,7 @@ endif(CMAKE_SYSTEM MATCHES "Windows*")
 # C++ Standard
 ###############################################################################
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 #-----------------------------------------------------------------
 # Global include directories

@@ -47,8 +47,8 @@ unique_ptr<Context> ctx;
 
 template <class M>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
-    std::shared_ptr<M>&                                _rsent_msg_ptr,
-    std::shared_ptr<M>&                                _rrecv_msg_ptr,
+    frame::mprpc::MessagePointerT<M>&                  _rsent_msg_ptr,
+    frame::mprpc::MessagePointerT<M>&                  _rrecv_msg_ptr,
     ErrorConditionT const&                             _rerror)
 {
     solid_dbg(generic_logger, Info, "received message on server");

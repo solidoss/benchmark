@@ -34,7 +34,7 @@ namespace bench_client {
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
 using StringVectorT = std::vector<std::string>;
 using AtomicSizeT   = std::atomic<size_t>;
-using CallPoolT     = ThreadPool<Function<void()>, Function<void()>>;
+using CallPoolT     = ThreadPool<Function<void(), 80>, Function<void(), 80>>;
 
 namespace {
 
@@ -45,7 +45,7 @@ struct Context {
 
     frame::Manager         manager;
     frame::mprpc::ServiceT ipcservice;
-    CallPoolT              cwp{1, 100, 0, [](const size_t) {}, [](const size_t) {}};
+    CallPoolT              cwp{{1, 100, 0}, [](const size_t) {}, [](const size_t) {}};
     frame::aio::Resolver   resolver;
 
     StringVectorT line_vec;
@@ -98,8 +98,8 @@ unique_ptr<Context> ctx;
 
 template <class M>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
-    std::shared_ptr<M>&                                _rsent_msg_ptr,
-    std::shared_ptr<M>&                                _rrecv_msg_ptr,
+    frame::mprpc::MessagePointerT<M>&                  _rsent_msg_ptr,
+    frame::mprpc::MessagePointerT<M>&                  _rrecv_msg_ptr,
     ErrorConditionT const&                             _rerror)
 {
     solid_dbg(generic_logger, Info, "message on client");
@@ -189,13 +189,13 @@ void connection_start(frame::mprpc::ConnectionContext& _rctx)
         _rctx.any() = make_pair(crt_idx + 1 + v, ctx->loop_count - v);
         _rctx.service().sendMessage(
             _rctx.recipientId(),
-            std::make_shared<EnableCacheable<bench::Message>>(
+            frame::mprpc::make_message<EnableCacheable<bench::Message>>(
                 ctx->line_vec[crt_idx % ctx->line_vec.size()]),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
 #ifdef USE_TWO_MESSAGES
         _rctx.service().sendMessage(
             _rctx.recipientId(),
-            std::make_shared<EnableCacheable<bench::Message>>(
+            frame::mprpc::make_message<EnableCacheable<bench::Message>>(
                 ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
 #endif
