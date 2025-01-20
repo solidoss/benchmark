@@ -26,11 +26,11 @@ printUsage()
     echo
 }
 
-BOOST_ADDR="https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.bz2"
+BOOST_ADDR="https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2"
 OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0h.tar.gz"
 CARES_ADDR="https://c-ares.haxx.se/download/c-ares-1.14.0.tar.gz"
 PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v24.3/protobuf-24.3.tar.gz"
-CAPNPROTO_ADDR=https://capnproto.org/capnproto-c++-1.0.1.tar.gz #"https://github.com/capnproto/capnproto/archive/refs/tags/v1.0.1.tar.gz"
+CAPNPROTO_ADDR="https://capnproto.org/capnproto-c++-1.1.0.tar.gz" #"https://github.com/capnproto/capnproto/archive/refs/tags/v1.0.1.tar.gz"
 SYSTEM=
 BIT64=
 

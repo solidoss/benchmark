@@ -44,8 +44,9 @@ endif()
 include(ExternalProject)
 include(cmake/build_cxxopts.cmake)
 
+set(EXTERNAL_PATH "${CMAKE_BINARY_DIR}/external")
+
 if(EXTERNAL_PATH STREQUAL "")
-    set(EXTERNAL_PATH "${CMAKE_CURRENT_BINARY_DIR}/external")
     
     include(cmake/build_boost.cmake)
     include(cmake/build_openssl.cmake)
@@ -118,7 +119,7 @@ set(CMAKE_CXX_STANDARD 20)
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
     ${EXTERNAL_PATH}/include/
-    ${CMAKE_CURRENT_BINARY_DIR}/external/include
+    ${CMAKE_BINARY_DIR}/external/include
 )
 #-----------------------------------------------------------------
 
@@ -142,5 +143,6 @@ include(CTest)
 add_subdirectory(aio)
 add_subdirectory(serialization)
 add_subdirectory(mprpc)
+add_subdirectory(threadpool)
 
 include(cmake/source-format.cmake)

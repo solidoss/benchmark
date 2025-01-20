@@ -1,0 +1,2 @@
+add_subdirectory(solid)
+add_subdirectory(erez_strauss_mpmcq)
