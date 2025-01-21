@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     auto consumer1 = [&]() {
         do {
             unique_ptr<Message> v;
-            if (q1.pop(v)) {
+            while (q1.pop(v)) {
                 handle(v, ctx1);
             }
         } while (running);
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     auto consumer2 = [&]() {
         do {
             unique_ptr<Message> v;
-            if (q2.pop(v)) {
+            while (q2.pop(v)) {
                 handle(v, ctx2);
             }
         } while (running);
