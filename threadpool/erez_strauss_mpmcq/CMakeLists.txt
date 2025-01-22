@@ -11,7 +11,6 @@ ExternalProject_Add(
 )
 
 include_directories("${CMAKE_BINARY_DIR}/external/include/es/lockfree/")
-#set( CMAKE_CXX_FLAGS "-DCOMPARE_BOOST=0 -std=c++17 -W -Wall -Wshadow -Wpedantic -ggdb3 -O3 -mcx16 " )
 
 add_compile_options("SHELL: -Wshadow -Wpedantic -mcx16")
 add_executable(bench_threadpool_es bench_threadpool_es.cpp)
@@ -22,3 +21,4 @@ target_link_libraries(bench_threadpool_es
     SolidFrame::solid_utility
 )
 
+add_test(NAME ThreadPoolErez1 COMMAND bench_threadpool_es)

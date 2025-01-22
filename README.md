@@ -3,12 +3,21 @@
 Benchmark SolidFrame against different libraries 
 
 ## On Linux
+
+Prerequisites:
 ```bash
-cmake -DCMAKE_BUILD_TYPE=maintain -DEXTERNAL_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/maintain ../../
+sudo dnf install re2-devel c-ares-devel
+mkdir ext_bench
+cd ext_bench
+../
 ```
 
 ```bash
-cmake -DCMAKE_BUILD_TYPE=release -DEXTERNAL_PATH=~/work/external -DSolidFrame_DIR=~/work/solidframe/build/release ../../
+cmake -DCMAKE_BUILD_TYPE=maintain -DEXTERNAL_PATH=~/work/ext_bench -DSolidFrame_DIR=~/work/solidframe/build/maintain ../../
+```
+
+```bash
+cmake -DCMAKE_BUILD_TYPE=release -DEXTERNAL_PATH=~/work/ext_bench -DSolidFrame_DIR=~/work/solidframe/build/release ../../
 ```
 
 ### Results

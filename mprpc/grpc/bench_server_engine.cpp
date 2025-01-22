@@ -220,7 +220,7 @@ private:
                 req_.clear_text();
                 streaming_rw_.Read(&req_, this);
             } else {
-                GPR_ASSERT(status_ == FINISH);
+                assert(status_ == FINISH);
                 // Once in the FINISH state, deallocate ourselves (CallData).
                 delete this;
             }
@@ -239,8 +239,8 @@ private:
             // memory address of a CallData instance.
             // The return value of Next should always be checked. This return value
             // tells us whether there is any kind of event or cq_ is shutting down.
-            GPR_ASSERT(cq_->Next(&tag, &ok));
-            GPR_ASSERT(ok);
+            cq_->Next(&tag, &ok);
+            assert(ok);
             static_cast<CallData*>(tag)->Proceed();
         }
     }

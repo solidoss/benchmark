@@ -189,7 +189,7 @@ public:
                 delete _pcall;
                 return false;
             } else {
-                GPR_ASSERT(_pcall->stage_ == AsyncClientCall::STREAM_DONE_CONNECT);
+                assert(_pcall->stage_ == AsyncClientCall::STREAM_DONE_CONNECT);
                 BenchMessage req;
                 const auto   line_idx = line_index_;
                 ++line_index_;
@@ -243,7 +243,7 @@ void Context::run()
 
     while (cq_.Next(&got_tag, &ok)) {
         AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
-        GPR_ASSERT(ok);
+        assert(ok);
         // GPR_ASSERT(call->reply.tokens_size() != 0);
 
         if (print_response && call->reply.tokens_size()) {

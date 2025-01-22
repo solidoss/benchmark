@@ -44,7 +44,7 @@ endif()
 include(ExternalProject)
 include(cmake/build_cxxopts.cmake)
 
-set(EXTERNAL_PATH "${CMAKE_BINARY_DIR}/external")
+#set(EXTERNAL_PATH "${CMAKE_BINARY_DIR}/external")
 
 if(EXTERNAL_PATH STREQUAL "")
     
@@ -118,8 +118,8 @@ set(CMAKE_CXX_STANDARD 20)
 #-----------------------------------------------------------------
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${EXTERNAL_PATH}/include/
-    ${CMAKE_BINARY_DIR}/external/include
+    "${CMAKE_BINARY_DIR}/external/include"
+    "${EXTERNAL_PATH}/include"
 )
 #-----------------------------------------------------------------
 

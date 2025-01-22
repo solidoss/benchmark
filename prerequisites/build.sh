@@ -28,9 +28,12 @@ printUsage()
 
 BOOST_ADDR="https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2"
 OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0h.tar.gz"
-CARES_ADDR="https://c-ares.haxx.se/download/c-ares-1.14.0.tar.gz"
-PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v24.3/protobuf-24.3.tar.gz"
+CARES_ADDR="https://github.com/c-ares/c-ares/releases/download/v1.34.4/c-ares-1.34.4.tar.gz"
+PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v29.3/protobuf-29.3.tar.gz"
 CAPNPROTO_ADDR="https://capnproto.org/capnproto-c++-1.1.0.tar.gz" #"https://github.com/capnproto/capnproto/archive/refs/tags/v1.0.1.tar.gz"
+ABSEIL_ADDR="https://github.com/abseil/abseil-cpp/releases/download/20240722.0/abseil-cpp-20240722.0.tar.gz"
+GRPC_ADDR="https://github.com/grpc/grpc/archive/refs/tags/v1.69.0.tar.gz"
+BORINGSSL_ADDR="https://github.com/google/boringssl/archive/refs/tags/0.20250114.0.tar.gz"
 SYSTEM=
 BIT64=
 
@@ -38,8 +41,18 @@ downloadArchive()
 {
     local url="$1"
     local arc="$(basename "${url}")"
-    echo "Downloading: [$arc] from [$url]"
-    curl -L -O $url
+    #wget --no-check-certificate -O $arc $url
+    #wget -O $arc $url
+    
+    if [ -z "$2" ]
+        then
+        echo "Downloading: [$arc] from [$url]"
+        curl -L -O $url
+        else
+        echo "Downloading: [$2] from [$url]"
+        curl -L -o $2 $url
+    fi
+    
 }
 
 extractTarBz2()
@@ -127,6 +140,45 @@ buildBoost()
     echo
     echo "Done BOOST!"
     echo
+}
+
+buildAbseil()
+{
+    WHAT="abseil"
+    ADDR_NAME=$ABSEIL_ADDR
+    echo
+    echo "Building $WHAT..."
+    echo
+
+    OLD_DIR=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Cleanup previous builds..."
+    echo
+
+    rm -rf $OLD_DIR
+
+    ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+    if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
+        mkdir old
+        mv $ARCH_NAME old/
+        echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
+        downloadArchive $ADDR_NAME
+        ARCH_NAME=`find . -name "$WHAT-*.tar.gz" | grep -v "old/"`
+    fi
+    
+    echo "Extracting $WHAT [$ARCH_NAME]..."
+    extractTarGz $ARCH_NAME
+
+    DIR_NAME=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Making $WHAT [$DIR_NAME]..."
+    echo
+
+    cd $DIR_NAME
+    mkdir build && cd build
+    cmake -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_INSTALL_PREFIX="$EXT_DIR" -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_LIBDIR="lib" ..
+    cmake --build . --target all -j8
+    cmake --install .
 }
 
 buildOpenssl()
@@ -273,10 +325,10 @@ function buildCAres
         cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$EXT_DIR"
     fi
     if    [[ "$SYSTEM" =~ "MINGW" ]]; then
-        cmake --build . --config release
+        cmake --build . --config release -j8
         cmake --build . --config release --target install
     else
-        cmake --build . --config release
+        cmake --build . --config release -j8
         cmake --build . --config release --target install
     fi
     
@@ -297,8 +349,11 @@ function buildCapNProto
 
     OLD_DIR=`ls . | grep "$WHAT" | grep -v "tar"`
     echo
-    echo "Cleanup previous builds..."
+    echo "Cleanup previous builds... ${OLD_DIR}"
     echo
+
+    rm -rf ${OLD_DIR}
+    rm -rf lib/libcapnp*
 
     
     echo
@@ -338,8 +393,12 @@ function buildCapNProto
         #cd .build
         #cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$EXT_DIR"
     else
-        ./configure --prefix="$EXT_DIR"
-        make -j install
+        #./configure --prefix="$EXT_DIR"
+        #make -j8 install
+        mkdir build && cd build
+        cmake -DCMAKE_INSTALL_PREFIX="$EXT_DIR" -DCMAKE_PREFIX_PATH="$EXT_DIR" -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_LIBDIR="lib" ..
+        cmake --build . --target all -j8
+        cmake --install .
     fi
     
     cd ..
@@ -351,40 +410,46 @@ function buildCapNProto
 
 function buildBoringSSL
 {
+    WHAT="boringssl"
+    ADDR_NAME=$BORINGSSL_ADDR
     echo
-    echo "Building BoringSSL..."
+    echo "Building $WHAT..."
     echo
-    
-    rm -rf include/openssl
-    rm -rf lib/libssl*
-    rm -rf lib64/libssl*
-    rm -rf lib/libcrypto*
-    rm -rf lib64/libcrypto*
-    rm -rf ssl_
-    
-    if [ ! -d $EXT_DIR/boringssl ]; then
-        git clone https://boringssl.googlesource.com/boringssl
-        cd boringssl
-    else
-        cd boringssl
-        git pull
+
+    OLD_DIR=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Cleanup previous builds..."
+    echo
+
+    rm -rf $OLD_DIR
+
+    echo
+    echo "Prepare the $WHAT archive..."
+    echo
+
+    ARCH_NAME=`find . -name "$WHAT.tar.gz" | grep -v "old/"`
+    if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
+        mkdir old
+        mv $ARCH_NAME old/
+        echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
+        downloadArchive $ADDR_NAME $WHAT.tar.gz
+        ARCH_NAME=`find . -name "$WHAT.tar.gz" | grep -v "old/"`
     fi
     
-    rm -rf build
+    echo "Extracting $WHAT [$ARCH_NAME]..."
+    extractTarGz $ARCH_NAME
+
+    DIR_NAME=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Making $WHAT [$DIR_NAME]..."
+    echo
+
+    cd $DIR_NAME
     
-    mkdir build
-    cd build
-    
-    cmake -DCMAKE_INSTALL_PREFIX="$EXT_DIR" ..
-    
-    cmake --build . --config release
-    
-    if [ ! -d $EXT_DIR/include ]; then
-        mkdir -p "$EXT_DIR/include"
-    fi
-    
-    cp ssl/libssl.a "$EXT_DIR/lib"
-    cp crypto/libcrypto.a "$EXT_DIR/lib"
+    mkdir build && cd build
+    cmake -DCMAKE_INSTALL_PREFIX="$EXT_DIR" -DCMAKE_PREFIX_PATH="$EXT_DIR" -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_LIBDIR="lib" ..
+    cmake --build . --target all -j8
+    cmake --install .
     
     cd ..
     
@@ -433,21 +498,61 @@ buildProtobuf()
 
     cd $DIR_NAME
     
-    if		[ "$SYSTEM" = "FreeBSD" ] ; then
-        echo "Not implemented"
-    elif	[ "$SYSTEM" = "Darwin" ] ; then
-        echo "Not implemented"
-    elif    [[ "$SYSTEM" =~ "MINGW" ]]; then
-        echo "Not implemented"
-    else
-        ./configure --prefix="$EXT_DIR" --disable-shared
+    mkdir build && cd build
+    cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX="$EXT_DIR" -DCMAKE_PREFIX_PATH="$EXT_DIR" -Dprotobuf_ABSL_PROVIDER="package" -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_LIBDIR="lib" ..
+    cmake --build . --target all -j8
+    cmake --install .
+    
+    cd ..
+    
+    echo
+    echo "Done $WHAT!"
+    echo
+}
+
+
+buildGrpc()
+{
+    WHAT="grpc"
+    ADDR_NAME=$GRPC_ADDR
+    echo
+    echo "Building $WHAT..."
+    echo
+
+    OLD_DIR=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Cleanup previous builds..."
+    echo
+
+    rm -rf $OLD_DIR
+
+    echo
+    echo "Prepare the $WHAT archive..."
+    echo
+
+    ARCH_NAME=`find . -name "$WHAT.tar.gz" | grep -v "old/"`
+    if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
+        mkdir old
+        mv $ARCH_NAME old/
+        echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
+        downloadArchive $ADDR_NAME $WHAT.tar.gz
+        ARCH_NAME=`find . -name "$WHAT.tar.gz" | grep -v "old/"`
     fi
     
-    if    [[ "$SYSTEM" =~ "MINGW" ]]; then
-        nmake && nmake install
-    else
-        make && make install
-    fi
+    echo "Extracting $WHAT [$ARCH_NAME]..."
+    extractTarGz $ARCH_NAME
+
+    DIR_NAME=`ls . | grep "$WHAT" | grep -v "tar"`
+    echo
+    echo "Making $WHAT [$DIR_NAME]..."
+    echo
+
+    cd $DIR_NAME
+    
+    mkdir build && cd build
+    cmake -DCMAKE_INSTALL_PREFIX="$EXT_DIR" -DCMAKE_PREFIX_PATH="$EXT_DIR" -DgRPC_ABSL_PROVIDER="package" -DgRPC_CARES_PROVIDER="package" -DgRPC_PROTOBUF_PROVIDER="package" -DgRPC_SSL_PROVIDER="package" -DgRPC_RE2_PROVIDER="package" -DgRPC_ZLIB_PROVIDER="package" -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_LIBDIR="lib" ..
+    cmake --build . --target all -j8
+    cmake --install .
     
     cd ..
     
@@ -465,6 +570,8 @@ BUILD_BORINGSSL=
 BUILD_C_ARES=
 BUILD_PROTOBUF=
 BUILD_CAPNPROTO=
+BUILD_ABSEIL=
+BUILD_GRPC=
 
 BUILD_SOMETHING=
 
@@ -504,8 +611,16 @@ while [ "$#" -gt 0 ]; do
         BUILD_CAPNPROTO="yes"
         BUILD_SOMETHING="yes"
         ;;
+    --abseil)
+        BUILD_ABSEIL="yes"
+        BUILD_SOMETHING="yes"
+        ;;
     --protobuf)
         BUILD_PROTOBUF="yes"
+        BUILD_SOMETHING="yes"
+        ;;
+    --grpc)
+        BUILD_GRPC="yes"
         BUILD_SOMETHING="yes"
         ;;
     --debug)
@@ -570,6 +685,14 @@ if [ $BUILD_PROTOBUF ]; then
     buildProtobuf
 fi
 
+if [ $BUILD_ABSEIL ]; then
+    buildAbseil
+fi
+
+if [ $BUILD_GRPC ]; then
+    buildGrpc
+fi
+
 if [ $BUILD_BOOST_FULL ]; then
     buildBoost
 else
@@ -579,15 +702,15 @@ else
 fi
 
 
-if [ -d lib64 ]; then
-    cd lib
-
-    for filename in ../lib64/*
-    do
-    echo "SimLink to $filename"
-    ln -s $filename .
-    done;
-fi
+#if [ -d lib64 ]; then
+#    cd lib
+#
+#    for filename in ../lib64/*
+#    do
+#    echo "SimLink to $filename"
+#    ln -s $filename .
+#    done;
+#fi
 
 if [ $ARCHIVE ]; then
     cd $EXT_DIR
