@@ -144,5 +144,6 @@ add_subdirectory(aio)
 add_subdirectory(serialization)
 add_subdirectory(mprpc)
 add_subdirectory(threadpool)
+add_subdirectory(function)
 
 include(cmake/source-format.cmake)
