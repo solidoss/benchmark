@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
     } else {
         cout << "Failed starting client engine: " << rv << endl;
     }
-    bench_client::stop();
+    bench_server::stop();
 
     return 0;
 }

@@ -64,7 +64,7 @@ int start(const bool _secure, const bool _compress,
 void stop(const bool _wait)
 {
     if (_wait) {
-        exit(0);
+        _exit(0);
     }
 }
 

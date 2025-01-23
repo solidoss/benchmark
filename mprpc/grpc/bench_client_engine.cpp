@@ -243,10 +243,10 @@ void Context::run()
 
     while (cq_.Next(&got_tag, &ok)) {
         AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
-        assert(ok);
+        //assert(ok);
         // GPR_ASSERT(call->reply.tokens_size() != 0);
 
-        if (print_response && call->reply.tokens_size()) {
+        if (ok && print_response && call->reply.tokens_size()) {
             lock_guard<mutex> lock(gmtx);
             // cout<< call << " Response "<<call->reply.id()<<": ";
             cout << call << " Response: ";
@@ -256,7 +256,7 @@ void Context::run()
             cout << endl;
         }
 
-        if (call->rclient_.step(call, messages_transferred, tokens_transferred)) {
+        if (ok && call->rclient_.step(call, messages_transferred, tokens_transferred)) {
         } else {
             if (connection_count_.fetch_sub(1) == 1) {
                 cout << "Client Done: msgcnt = " << messages_transferred
