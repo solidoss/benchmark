@@ -1,4 +1,4 @@
-set(es_mpmcq_PREFIX ${CMAKE_BINARY_DIR}/external/cereal)
+set(es_mpmcq_PREFIX ${CMAKE_BINARY_DIR}/external/es_mpmcq)
 
 ExternalProject_Add(
     build-es-mpmcq

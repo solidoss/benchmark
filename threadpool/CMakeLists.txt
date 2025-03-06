@@ -1,2 +1,3 @@
 add_subdirectory(solid)
+add_subdirectory(rigtorp)
 add_subdirectory(erez_strauss_mpmcq)
