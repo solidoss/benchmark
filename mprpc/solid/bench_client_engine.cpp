@@ -14,6 +14,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <solid/system/statistic.hpp>
 
 static void message_created();
 
@@ -52,27 +53,24 @@ struct Context {
 
     mutex              mtx;
     condition_variable cnd;
-    AtomicSizeT        ramp_up_connection_count;
-    size_t             ramp_down_connection_count;
-    AtomicSizeT        pending_ramp_down_connection_count;
-    size_t             loop_count;
-    size_t             connection_count;
-    bool               print_response;
-    AtomicSizeT        messages_transferred;
-    AtomicSizeT        tokens_transferred;
-    atomic<uint64_t>   payload_trasferred;
+    AtomicSizeT        ramp_up_connection_count{0};
+    size_t             ramp_down_connection_count{0};
+    AtomicSizeT        pending_ramp_down_connection_count{0};
+    size_t             loop_count{0};
+    size_t             connection_count{0};
+    bool               print_response{false};
+    AtomicSizeT        messages_transferred{0};
+    AtomicSizeT        tokens_transferred{0};
+    atomic<uint64_t>   payload_trasferred{0};
+    atomic_uint64_t    round_trip_min_usec{-1ull};
+    atomic_uint64_t    round_trip_max_usec{0};
+    atomic_uint64_t    round_trip_sum_usec{0};
 
     Context()
         : ipcservice(manager)
         , resolver([this](std::function<void()>&& _fnc) {
             cwp.pushOne(std::move(_fnc));
         })
-        , ramp_up_connection_count(0)
-        , ramp_down_connection_count(0)
-        , pending_ramp_down_connection_count(0)
-        , messages_transferred(0)
-        , tokens_transferred(0)
-        , payload_trasferred(0)
     {
     }
 
@@ -82,7 +80,10 @@ struct Context {
         cout << "Messages transferred: " << messages_transferred << endl;
         cout << "Payload transferred: " << payload_trasferred << endl;
         cout << "Client Messages created: " << msg_count.load() << endl;
+        cout << "RoundTrip(usecs): Min = " << round_trip_min_usec.load() << " Max = " << round_trip_max_usec.load() << " Avg = " << round_trip_sum_usec.load() / messages_transferred.load() << endl;
     }
+
+    void collect(const size_t _token_count, const size_t _usec);
 };
 
 auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
@@ -94,7 +95,32 @@ auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
 
 unique_ptr<Context> ctx;
 
+inline auto to_microseconds_since_epoch(const std::chrono::steady_clock::time_point& _time = std::chrono::steady_clock::now())
+{
+    using namespace std::chrono;
+    const uint64_t ms = duration_cast<microseconds>(_time.time_since_epoch()).count();
+    return ms;
+}
 // #define USE_TWO_MESSAGES
+
+void Context::collect(const size_t _token_count, const size_t _then_usec)
+{
+
+    assert(_then_usec != 0);
+
+    ++messages_transferred;
+    tokens_transferred += _token_count;
+    const auto now_usec = to_microseconds_since_epoch();
+    if (now_usec > _then_usec) {
+        const auto dur_usec = now_usec - _then_usec;
+
+        solid_statistic_min(round_trip_min_usec, dur_usec);
+        solid_statistic_max(round_trip_max_usec, dur_usec);
+        round_trip_sum_usec += dur_usec;
+
+        // cout << dur_usec << ' ' << round_trip_min_usec.load() << ' ' << round_trip_max_usec.load() << ' ' << round_trip_sum_usec.load() << endl;
+    }
+}
 
 template <class M>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
@@ -109,8 +135,7 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
 
     auto& con_val = *_rctx.any().cast<pair<size_t, size_t>>();
 
-    ++ctx->messages_transferred;
-    ctx->tokens_transferred += _rrecv_msg_ptr->vec.size();
+    ctx->collect(_rrecv_msg_ptr->vec.size(), _rrecv_msg_ptr->microseconds_since_epoch);
 
 #if 0
     ctx->payload_trasferred += _rsent_msg_ptr->str.size();
@@ -135,7 +160,7 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
         --con_val.second;
         _rsent_msg_ptr->str = ctx->line_vec[con_val.first % ctx->line_vec.size()];
         ++con_val.first;
-
+        _rsent_msg_ptr->microseconds_since_epoch = to_microseconds_since_epoch();
         _rctx.service().sendMessage(_rctx.recipientId(), std::move(_rsent_msg_ptr),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
     } else if (con_val.second == 1) {
@@ -190,7 +215,7 @@ void connection_start(frame::mprpc::ConnectionContext& _rctx)
         _rctx.service().sendMessage(
             _rctx.recipientId(),
             frame::mprpc::make_message<EnableCacheable<bench::Message>>(
-                ctx->line_vec[crt_idx % ctx->line_vec.size()]),
+                ctx->line_vec[crt_idx % ctx->line_vec.size()], to_microseconds_since_epoch()),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
 #ifdef USE_TWO_MESSAGES
         _rctx.service().sendMessage(

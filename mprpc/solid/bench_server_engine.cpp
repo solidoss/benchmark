@@ -44,6 +44,7 @@ auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
 };
 
 unique_ptr<Context> ctx;
+atomic_size_t       msg_count{0};
 
 template <class M>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
@@ -56,13 +57,15 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
 
     if (_rrecv_msg_ptr) {
         solid_check(!_rsent_msg_ptr);
-        {
+        if (true) {
             istringstream iss{std::move(_rrecv_msg_ptr->str)};
             while (!iss.eof()) {
                 _rrecv_msg_ptr->vec.emplace_back();
                 iss >> _rrecv_msg_ptr->vec.back();
             }
             _rrecv_msg_ptr->str.clear();
+        } else {
+            _rrecv_msg_ptr->vec.emplace_back(std::move(_rrecv_msg_ptr->str));
         }
         solid_check(!_rctx.service().sendResponse(_rctx.recipientId(),
             std::move(_rrecv_msg_ptr)));
@@ -75,7 +78,6 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
         cacheable_cache(std::move(_rsent_msg_ptr));
     }
 }
-atomic_size_t msg_count{0};
 } // namespace
 
 int start(const bool _secure, const bool _compress,
