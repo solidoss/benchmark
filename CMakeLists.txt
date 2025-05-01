@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+
+#-----------------------------------------------------------------
+# Set policies
+#-----------------------------------------------------------------
 
 if(${CMAKE_VERSION} VERSION_LESS "3.27.0")
 else() 
@@ -9,6 +13,10 @@ if(POLICY CMP0135)
 	cmake_policy(SET CMP0135 NEW)
 	set(CMAKE_POLICY_DEFAULT_CMP0135 NEW)
 endif()
+
+cmake_policy(SET CMP0074 NEW)
+cmake_policy(SET CMP0167 NEW)
+#-----------------------------------------------------------------
 
 #-----------------------------------------------------------------
 # The project

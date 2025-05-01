@@ -26,13 +26,13 @@ printUsage()
     echo
 }
 
-BOOST_ADDR="https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2"
-OPENSSL_ADDR="https://www.openssl.org/source/openssl-1.1.0h.tar.gz"
+BOOST_ADDR="https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.bz2"
+OPENSSL_ADDR="https://github.com/openssl/openssl/releases/download/openssl-3.5.0/openssl-3.5.0.tar.gz"
 CARES_ADDR="https://github.com/c-ares/c-ares/releases/download/v1.34.4/c-ares-1.34.4.tar.gz"
-PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v29.3/protobuf-29.3.tar.gz"
+PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v30.2/protobuf-30.2.tar.gz"
 CAPNPROTO_ADDR="https://capnproto.org/capnproto-c++-1.1.0.tar.gz" #"https://github.com/capnproto/capnproto/archive/refs/tags/v1.0.1.tar.gz"
-ABSEIL_ADDR="https://github.com/abseil/abseil-cpp/releases/download/20240722.0/abseil-cpp-20240722.0.tar.gz"
-GRPC_ADDR="https://github.com/grpc/grpc/archive/refs/tags/v1.69.0.tar.gz"
+ABSEIL_ADDR="https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz"
+GRPC_ADDR="https://github.com/grpc/grpc/archive/refs/tags/v1.72.0.tar.gz"
 BORINGSSL_ADDR="https://github.com/google/boringssl/archive/refs/tags/0.20250114.0.tar.gz"
 SYSTEM=
 BIT64=
