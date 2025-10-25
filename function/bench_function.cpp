@@ -1,10 +1,13 @@
 #include "boost/function.hpp"
+#include "solid/system/statistic.hpp"
 #include "solid/utility/function.hpp"
 #include <array>
+#include <chrono>
 #include <deque>
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <type_traits>
 using namespace solid;
 using namespace std;
 
@@ -47,9 +50,10 @@ public:
         fnc_dq.clear();
     }
     template <class Fnc>
-    void push(Fnc _f)
+    void push(Fnc&& _f)
     {
-        static const PrintSize ps(sizeof(_f));
+        static_assert(std::is_trivially_copyable_v<std::remove_cvref_t<Fnc>>);
+        static const PrintSize ps(sizeof(Fnc));
         fnc_dq.emplace_back(std::move(_f));
     }
 
@@ -115,7 +119,7 @@ TestBase* create_test(const FunctionChoice _fnc_choice, const size_t _closure_si
 {
     switch (_fnc_choice) {
     case FunctionChoice::Solid:
-        return create_test<solid::Function<uint64_t(const size_t), 128>>(_closure_size);
+        return create_test<solid::Function<uint64_t(const size_t)>>(_closure_size);
     case FunctionChoice::Std:
         return create_test<std::function<uint64_t(const size_t)>>(_closure_size);
     case FunctionChoice::Boost:
@@ -167,16 +171,38 @@ int main(int argc, char* argv[])
     }
     cout << "Test " << solid::to_underlying(fnc_choice) << " function with closure_size = " << closure_size << " create_count = " << create_count << " repeat_count = " << repeat_count << endl;
 
-    TestBase* pt = create_test(fnc_choice, closure_size);
+    TestBase* pt             = create_test(fnc_choice, closure_size);
+    uint64_t  clear_time_ns  = 0;
+    uint64_t  create_time_ns = 0;
+    uint64_t  run_time_ns    = 0;
 
     for (size_t i = 0; i < repeat_count; ++i) {
+        auto start_time = std::chrono::high_resolution_clock::now();
         pt->clear();
+        {
+            auto const     stop_time = std::chrono::high_resolution_clock::now();
+            uint64_t const ns        = std::chrono::duration_cast<std::chrono::nanoseconds>(stop_time - start_time).count();
+            solid_statistic_add(clear_time_ns, ns);
+            start_time = stop_time;
+        }
         pt->create(create_count);
+        {
+            auto const     stop_time = std::chrono::high_resolution_clock::now();
+            uint64_t const ns        = std::chrono::duration_cast<std::chrono::nanoseconds>(stop_time - start_time).count();
+            solid_statistic_add(create_time_ns, ns);
+            start_time = stop_time;
+        }
         for (size_t j = 0; j < 10; ++j) {
             pt->run(j);
         }
+        {
+            auto const     stop_time = std::chrono::high_resolution_clock::now();
+            uint64_t const ns        = std::chrono::duration_cast<std::chrono::nanoseconds>(stop_time - start_time).count();
+            solid_statistic_add(run_time_ns, ns);
+        }
     }
     delete pt;
+    cout << "clear_time_ms = " << clear_time_ns / 1000000u << " create_time_ns = " << create_time_ns / 1000000u << " run_time_ns = " << run_time_ns / 1000000u << endl;
 
     return 0;
 }
