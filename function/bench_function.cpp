@@ -3,6 +3,7 @@
 #include "solid/utility/function.hpp"
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <deque>
 #include <fstream>
 #include <functional>
@@ -28,9 +29,9 @@ public:
 };
 
 struct PrintSize {
-    PrintSize(const size_t _sz)
+    PrintSize(const size_t _sz, const size_t _align)
     {
-        cout << "sizeof(closure): " << _sz << endl;
+        cout << "sizeof(closure): " << _sz << " alignof(closure) " << _align << endl;
     }
 };
 
@@ -42,7 +43,7 @@ class FunctionTest : public TestBase {
 public:
     FunctionTest()
     {
-        cout << "sizeof(F) = " << sizeof(F) << endl;
+        cout << "sizeof(F) = " << sizeof(F) << " sizeof(maxalign_t) = " << sizeof(std::max_align_t) << " alignof(maxalign_t) = " << alignof(std::max_align_t) << endl;
     }
 
     void clear() override
@@ -53,7 +54,7 @@ public:
     void push(Fnc&& _f)
     {
         static_assert(std::is_trivially_copyable_v<std::remove_cvref_t<Fnc>>);
-        static const PrintSize ps(sizeof(Fnc));
+        static const PrintSize ps(sizeof(Fnc), alignof(Fnc));
         fnc_dq.emplace_back(std::move(_f));
     }
 
@@ -93,6 +94,9 @@ TestBase* create_test(const size_t _closure_size)
     }
     if (_closure_size < 2) {
         return new FunctionTest<F, 1>();
+    }
+    if (_closure_size == 3) {
+        return new FunctionTest<F, 3>();
     }
     if (_closure_size < 4) {
         return new FunctionTest<F, 2>();
