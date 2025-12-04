@@ -5,13 +5,14 @@
 #include "solid/frame/mprpc/mprpcmessage.hpp"
 #include "solid/frame/mprpc/mprpcprotocol_serialization_v3.hpp"
 #include "solid/reflection/v1/reflection.hpp"
+#include "solid/utility/poolable.hpp"
 
 #include <string>
 #include <vector>
 
 namespace bench {
 
-struct Message : solid::frame::mprpc::Message {
+struct Message final : solid::frame::mprpc::Message, solid::Poolable<Message> {
     using StringVectorT = std::vector<std::string>;
     std::string   str;
     StringVectorT vec;
@@ -34,6 +35,12 @@ struct Message : solid::frame::mprpc::Message {
         , microseconds_since_epoch(_microseconds_since_epoch)
     {
         message_created();
+    }
+
+    void init()
+    {
+        str.clear();
+        vec.clear();
     }
 
     SOLID_REFLECT_V1(_rr, _rthis, _rctx)

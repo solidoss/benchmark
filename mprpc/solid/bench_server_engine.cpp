@@ -8,6 +8,8 @@
 #include "solid/frame/service.hpp"
 #include "solid/system/log.hpp"
 
+#include "solid/utility/pool.hpp"
+
 #include "solid/frame/aio/aioresolver.hpp"
 
 static void message_created();
@@ -40,7 +42,9 @@ auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
     using PtrT  = std::decay_t<decltype(_rmsgptr)>;
     using ElemT = typename PtrT::element_type;
 
-    _rmsgptr = ElemT::create();
+    _rmsgptr = Pool<ElemT>::create();
+    _rmsgptr->str.clear();
+    _rmsgptr->vec.clear();
 };
 
 unique_ptr<Context> ctx;
@@ -48,8 +52,8 @@ atomic_size_t       msg_count{0};
 
 template <class M>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
-    frame::mprpc::MessagePointerT<M>&                  _rsent_msg_ptr,
-    frame::mprpc::MessagePointerT<M>&                  _rrecv_msg_ptr,
+    frame::mprpc::SendMessagePointerT<M>&              _rsent_msg_ptr,
+    frame::mprpc::RecvMessagePointerT<M>&              _rrecv_msg_ptr,
     ErrorConditionT const&                             _rerror)
 {
     solid_dbg(generic_logger, Info, "received message on server");
@@ -73,9 +77,6 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
 
     if (_rsent_msg_ptr) {
         solid_check(!_rrecv_msg_ptr);
-        _rsent_msg_ptr->str.clear();
-        _rsent_msg_ptr->vec.clear();
-        cacheable_cache(std::move(_rsent_msg_ptr));
     }
 }
 } // namespace
@@ -96,8 +97,7 @@ int start(const bool _secure, const bool _compress,
                 auto lambda = [&](const uint8_t _id, const std::string_view _name,
                                   auto const& _rtype) {
                     using TypeT = typename std::decay_t<decltype(_rtype)>::TypeT;
-                    _rmap.template registerMessage<EnableCacheable<TypeT>>(_id, _name,
-                        complete_message<EnableCacheable<TypeT>>, create_message_ptr);
+                    _rmap.template registerMessage<TypeT>(_id, _name, complete_message<TypeT>, create_message_ptr);
                 };
                 bench::configure_protocol(lambda);
             });

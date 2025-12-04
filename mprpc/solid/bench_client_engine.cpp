@@ -7,6 +7,7 @@
 #include "solid/frame/scheduler.hpp"
 #include "solid/frame/service.hpp"
 
+#include "solid/utility/pool.hpp"
 #include "solid/utility/threadpool.hpp"
 
 #include "solid/frame/aio/aioresolver.hpp"
@@ -90,7 +91,9 @@ auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
     using PtrT  = std::decay_t<decltype(_rmsgptr)>;
     using ElemT = typename PtrT::element_type;
 
-    _rmsgptr = ElemT::create();
+    _rmsgptr = Pool<ElemT>::create();
+    _rmsgptr->str.clear();
+    _rmsgptr->vec.clear();
 };
 
 unique_ptr<Context> ctx;
@@ -124,8 +127,8 @@ void Context::collect(const size_t _token_count, const size_t _then_usec)
 
 template <class M>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
-    frame::mprpc::MessagePointerT<M>&                  _rsent_msg_ptr,
-    frame::mprpc::MessagePointerT<M>&                  _rrecv_msg_ptr,
+    frame::mprpc::SendMessagePointerT<M>&              _rsent_msg_ptr,
+    frame::mprpc::RecvMessagePointerT<M>&              _rrecv_msg_ptr,
     ErrorConditionT const&                             _rerror)
 {
     solid_dbg(generic_logger, Info, "message on client");
@@ -152,15 +155,17 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
         cout << endl;
     }
 
-    _rrecv_msg_ptr->str.clear();
-    _rrecv_msg_ptr->vec.clear();
-    cacheable_cache(std::move(_rrecv_msg_ptr));
-
     if (con_val.second > 1) {
         --con_val.second;
-        _rsent_msg_ptr->str = ctx->line_vec[con_val.first % ctx->line_vec.size()];
+        {
+            auto msg_ptr = _rsent_msg_ptr.collapse();
+            assert(msg_ptr);
+            msg_ptr->str                      = ctx->line_vec[con_val.first % ctx->line_vec.size()];
+            msg_ptr->microseconds_since_epoch = to_microseconds_since_epoch();
+            _rsent_msg_ptr                    = std::move(msg_ptr);
+        }
+
         ++con_val.first;
-        _rsent_msg_ptr->microseconds_since_epoch = to_microseconds_since_epoch();
         _rctx.service().sendMessage(_rctx.recipientId(), std::move(_rsent_msg_ptr),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
     } else if (con_val.second == 1) {
@@ -214,13 +219,13 @@ void connection_start(frame::mprpc::ConnectionContext& _rctx)
         _rctx.any() = make_pair(crt_idx + 1 + v, ctx->loop_count - v);
         _rctx.service().sendMessage(
             _rctx.recipientId(),
-            frame::mprpc::make_message<EnableCacheable<bench::Message>>(
+            frame::mprpc::make_message<bench::Message>(
                 ctx->line_vec[crt_idx % ctx->line_vec.size()], to_microseconds_since_epoch()),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
 #ifdef USE_TWO_MESSAGES
         _rctx.service().sendMessage(
             _rctx.recipientId(),
-            frame::mprpc::make_message<EnableCacheable<bench::Message>>(
+            frame::mprpc::make_message<bench::Message>(
                 ctx->line_vec[(crt_idx + 1) % ctx->line_vec.size()]),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
 #endif
@@ -261,8 +266,8 @@ int start(const bool _secure, const bool _compress,
                 auto lambda = [&](const uint8_t _id, const std::string_view _name,
                                   auto const& _rtype) {
                     using TypeT = typename std::decay_t<decltype(_rtype)>::TypeT;
-                    _rmap.template registerMessage<EnableCacheable<TypeT>>(_id, _name,
-                        complete_message<EnableCacheable<TypeT>>, create_message_ptr);
+                    _rmap.template registerMessage<TypeT>(_id, _name,
+                        complete_message<TypeT>, create_message_ptr);
                 };
                 bench::configure_protocol(lambda);
             });
@@ -270,7 +275,7 @@ int start(const bool _secure, const bool _compress,
 
         cfg.pool_max_active_connection_count = _connection_count;
 
-        cfg.client.name_resolve_fnc = frame::mprpc::InternetResolverF(ctx->resolver, _default_port.c_str());
+        cfg.client.name_resolve_fnc.emplace(frame::mprpc::InternetResolverF(ctx->resolver, _default_port.c_str()));
 
         cfg.client.connection_start_state = frame::mprpc::ConnectionState::Active;
 

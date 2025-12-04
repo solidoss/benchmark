@@ -55,7 +55,11 @@ public:
     {
         static_assert(std::is_trivially_copyable_v<std::remove_cvref_t<Fnc>>);
         static const PrintSize ps(sizeof(Fnc), alignof(Fnc));
-        fnc_dq.emplace_back(std::move(_f));
+        if constexpr (solid::is_function_v<F>) {
+            fnc_dq.emplace_back(std::move(_f), solid::AcceptBigT{});
+        } else {
+            fnc_dq.emplace_back(std::move(_f));
+        }
     }
 
     void create(const size_t _create_count) override
