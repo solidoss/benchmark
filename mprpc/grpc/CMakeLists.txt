@@ -85,7 +85,6 @@ target_link_libraries(grpc_bench_server
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
     Boost::program_options
-    Boost::system
     utf8_range::utf8_range
     utf8_range::utf8_validity
 )
@@ -104,7 +103,6 @@ target_link_libraries(grpc_bench_client
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
     Boost::program_options
-    Boost::system
     utf8_range::utf8_range
     utf8_range::utf8_validity
 )    
@@ -122,7 +120,6 @@ target_link_libraries(grpc_bench_test
     protobuf::libprotobuf
     gRPC::grpc++_unsecure
     Boost::program_options
-    Boost::system
     utf8_range::utf8_range
     utf8_range::utf8_validity
 )

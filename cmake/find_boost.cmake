@@ -17,7 +17,6 @@ else()
     find_package(Boost
         REQUIRED
         COMPONENTS
-            system
             chrono
             thread
             filesystem

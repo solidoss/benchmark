@@ -15,7 +15,6 @@ add_executable(capnp_bench_test "bench_test_main.cpp" "bench_client_engine.hpp" 
 target_link_libraries(capnp_bench_test
     CapnProto::capnp-rpc
     Boost::program_options
-    Boost::system
 )
 
 

@@ -14,7 +14,6 @@ target_link_libraries(benchmark
     SolidFrame::solid_system
     Boost::serialization
     Boost::program_options
-    Boost::system
     ${SYSTEM_BASIC_LIBRARIES}
 )
 

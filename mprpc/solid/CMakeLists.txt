@@ -50,7 +50,6 @@ add_executable(bench_server bench_server_main.cpp)
 target_link_libraries(bench_server
     bench_server_engine
     Boost::program_options
-    Boost::system
     ${SYSTEM_BASIC_LIBRARIES}
 )
 
@@ -72,7 +71,6 @@ add_executable(bench_client bench_client_main.cpp)
 target_link_libraries(bench_client
     bench_client_engine
     Boost::program_options
-    Boost::system
     ${SYSTEM_BASIC_LIBRARIES}
 )
 
@@ -87,7 +85,6 @@ target_link_libraries(bench_test
     bench_client_engine
     bench_server_engine
     Boost::program_options
-    Boost::system
     ${SYSTEM_BASIC_LIBRARIES}
     ${SYS_DYNAMIC_LOAD_LIB}
 )

@@ -95,6 +95,7 @@ private:
             [this](boost::system::error_code ec, tcp::socket socket) {
                 if (!ec) {
                     socket.non_blocking(true);
+                    socket.set_option(tcp::no_delay(true));
                     std::make_shared<session>(std::move(socket))->start();
                 }
 
@@ -198,6 +199,7 @@ private:
         acceptor_.async_accept(socket_,
             [this](std::error_code ec) {
                 if (!ec) {
+                    socket_.set_option(tcp::no_delay(true));
                     auto ses = new session(std::move(socket_));
                     ses->start();
                 }

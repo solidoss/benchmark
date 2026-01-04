@@ -5,6 +5,13 @@ target_link_libraries (boost_echo_server
     #uring
 )
 
+add_executable (boost_coro_echo_server boost_coro_echo_server.cpp)
+
+target_link_libraries (boost_coro_echo_server
+    ${SYSTEM_BASIC_LIBRARIES}
+    #uring
+)
+
 add_executable (boost_relay_server boost_relay_server.cpp)
 
 target_link_libraries (boost_relay_server

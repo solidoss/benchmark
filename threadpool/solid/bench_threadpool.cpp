@@ -1,6 +1,7 @@
 #include "solid/system/log.hpp"
 #include "solid/utility/threadpool.hpp"
 #include <iostream>
+#include <memory>
 #include <variant>
 
 using namespace solid;
@@ -21,7 +22,7 @@ struct Message {
 
 using VariantT = std::variant<Message, unique_ptr<Message>>;
 
-using ThreadPoolT = ThreadPool<VariantT, size_t, EmptyThreadPoolStatistic>;
+using ThreadPoolT = ThreadPool<VariantT, size_t, solid::DefaultThreadPoolTraits<solid::EmptyThreadPoolStatistic>>;
 
 struct Context {
     ThreadPoolT& rtp_;

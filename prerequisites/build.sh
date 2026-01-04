@@ -26,7 +26,7 @@ printUsage()
     echo
 }
 
-BOOST_ADDR="https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.bz2"
+BOOST_ADDR="https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.bz2"
 OPENSSL_ADDR="https://github.com/openssl/openssl/releases/download/openssl-3.5.0/openssl-3.5.0.tar.gz"
 CARES_ADDR="https://github.com/c-ares/c-ares/releases/download/v1.34.4/c-ares-1.34.4.tar.gz"
 PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v30.2/protobuf-30.2.tar.gz"
