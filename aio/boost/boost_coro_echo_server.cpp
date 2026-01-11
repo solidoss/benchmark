@@ -8,6 +8,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <atomic>
 #include <boost/asio/co_spawn.hpp>
 #include <boost/asio/detached.hpp>
 #include <boost/asio/io_context.hpp>
@@ -15,6 +16,7 @@
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/write.hpp>
 #include <cstdio>
+#include <iostream>
 
 using boost::asio::awaitable;
 using boost::asio::co_spawn;
@@ -28,6 +30,21 @@ namespace this_coro = boost::asio::this_coro;
     boost::asio::use_awaitable_t(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 #endif
 
+namespace {
+
+size_t              connection_count;
+std::atomic<size_t> closed_connection_count{0};
+
+void connection_closed()
+{
+    if (connection_count && closed_connection_count.fetch_add(1) == (connection_count - 1)) {
+        std::cout << "Exiting" << std::endl;
+        exit(0);
+    }
+}
+
+} // namespace
+
 awaitable<void> echo(tcp::socket socket)
 {
     try {
@@ -38,13 +55,14 @@ awaitable<void> echo(tcp::socket socket)
         }
     } catch (std::exception& e) {
         std::printf("echo Exception: %s\n", e.what());
+        connection_closed();
     }
 }
 
-awaitable<void> listener()
+awaitable<void> listener(int const port)
 {
     auto          executor = co_await this_coro::executor;
-    tcp::acceptor acceptor(executor, {tcp::v4(), 8888});
+    tcp::acceptor acceptor(executor, {tcp::v4(), port});
     for (;;) {
         tcp::socket socket = co_await acceptor.async_accept(use_awaitable);
         socket.set_option(tcp::no_delay(true));
@@ -52,15 +70,25 @@ awaitable<void> listener()
     }
 }
 
-int main()
+int main(int argc, char* argv[])
 {
     try {
+        if (argc < 2) {
+            std::cerr << "Usage: async_tcp_echo_server <port> <connection_count>\n";
+            return 1;
+        }
+
+        if (argc > 2) {
+            connection_count = atoi(argv[2]);
+            std::cout << "Connection count " << connection_count << std::endl;
+        }
+
         boost::asio::io_context io_context(1);
 
         boost::asio::signal_set signals(io_context, SIGINT, SIGTERM);
         signals.async_wait([&](auto, auto) { io_context.stop(); });
 
-        co_spawn(io_context, listener(), detached);
+        co_spawn(io_context, listener(std::atoi(argv[1])), detached);
 
         io_context.run();
     } catch (std::exception& e) {

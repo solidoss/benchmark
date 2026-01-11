@@ -1,6 +1,9 @@
 
 list(APPEND CMAKE_PREFIX_PATH "${EXTERNAL_PATH}")
 
+#set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/echo-ca-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/echo-server-key.pem ${CMAKE_CURRENT_BINARY_DIR}/echo-server-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/echo-client-key.pem ${CMAKE_CURRENT_BINARY_DIR}/echo-client-cert.pem
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/certs/echo-ca-cert.pem ${CMAKE_CURRENT_BINARY_DIR}/${SUFFIX}/
@@ -34,8 +37,8 @@ add_custom_target(grpc_bench_text
 
 # Protobuf
 #set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
-#set(protobuf_MODULE_COMPATIBLE TRUE)
-#find_package(Protobuf REQUIRED)
+set(protobuf_MODULE_COMPATIBLE TRUE)
+find_package(Protobuf REQUIRED)
 find_package(utf8_range REQUIRED)
 
 #include_directories(${Protobuf_INCLUDE_DIRS})

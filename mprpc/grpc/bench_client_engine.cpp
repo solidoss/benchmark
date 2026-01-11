@@ -243,8 +243,8 @@ void Context::run()
 
     while (cq_.Next(&got_tag, &ok)) {
         AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
-        //assert(ok);
-        // GPR_ASSERT(call->reply.tokens_size() != 0);
+        // assert(ok);
+        //  GPR_ASSERT(call->reply.tokens_size() != 0);
 
         if (ok && print_response && call->reply.tokens_size()) {
             lock_guard<mutex> lock(gmtx);

@@ -26,379 +26,211 @@ cmake -DCMAKE_BUILD_TYPE=release -DEXTERNAL_PATH=~/work/ext_bench -DSolidFrame_D
 
 ### Results
 
-On a 12 gen i7, Fedora 41 (20250123):
+On a 12 gen i7, Fedora 41 (20260111):
 
 ```
+[0/1] Running tests...
 Test project /home/valentin/work/benchmark/build/release
-      Start  1: SolidEcho100_1000
- 1/57 Test  #1: SolidEcho100_1000 ................   Passed    0.40 sec
-      Start  2: SolidEcho200_1000
- 2/57 Test  #2: SolidEcho200_1000 ................   Passed    0.79 sec
-      Start  3: SolidEcho400_1000
- 3/57 Test  #3: SolidEcho400_1000 ................   Passed    1.51 sec
-      Start  4: SolidRelayEcho100_1000
- 4/57 Test  #4: SolidRelayEcho100_1000 ...........   Passed    0.83 sec
-      Start  5: SolidRelayEcho200_1000
- 5/57 Test  #5: SolidRelayEcho200_1000 ...........   Passed    1.70 sec
-      Start  6: SolidRelayEcho400_1000
- 6/57 Test  #6: SolidRelayEcho400_1000 ...........   Passed    3.40 sec
-      Start  7: BoostEcho100_1000
- 7/57 Test  #7: BoostEcho100_1000 ................   Passed    4.74 sec
-      Start  8: BoostEcho200_1000
- 8/57 Test  #8: BoostEcho200_1000 ................   Passed    4.97 sec
-      Start  9: BoostEcho400_1000
- 9/57 Test  #9: BoostEcho400_1000 ................   Passed    4.57 sec
-      Start 10: BoostRelayEcho100_1000
-10/57 Test #10: BoostRelayEcho100_1000 ...........   Passed    4.95 sec
-      Start 11: BoostRelayEcho200_1000
-11/57 Test #11: BoostRelayEcho200_1000 ...........   Passed    4.77 sec
-      Start 12: BoostRelayEcho400_1000
-12/57 Test #12: BoostRelayEcho400_1000 ...........   Passed    4.68 sec
-      Start 13: Boost1k
-13/57 Test #13: Boost1k ..........................   Passed    0.01 sec
-      Start 14: Cereal1k
-14/57 Test #14: Cereal1k .........................   Passed    0.01 sec
-      Start 15: CerealPortable1k
-15/57 Test #15: CerealPortable1k .................   Passed    0.01 sec
-      Start 16: SolidV3_1k
-16/57 Test #16: SolidV3_1k .......................   Passed    0.01 sec
-      Start 17: Boost10k
-17/57 Test #17: Boost10k .........................   Passed    0.05 sec
-      Start 18: Cereal10k
-18/57 Test #18: Cereal10k ........................   Passed    0.05 sec
-      Start 19: CerealPortable10k
-19/57 Test #19: CerealPortable10k ................   Passed    0.04 sec
-      Start 20: SolidV3_10k
-20/57 Test #20: SolidV3_10k ......................   Passed    0.05 sec
-      Start 21: Boost100k
-21/57 Test #21: Boost100k ........................   Passed    0.48 sec
-      Start 22: Cereal100k
-22/57 Test #22: Cereal100k .......................   Passed    0.36 sec
-      Start 23: CerealPortable100k
-23/57 Test #23: CerealPortable100k ...............   Passed    0.36 sec
-      Start 24: SolidV3_100k
-24/57 Test #24: SolidV3_100k .....................   Passed    0.45 sec
-      Start 25: SolidPlainNoComp_100_1
-25/57 Test #25: SolidPlainNoComp_100_1 ...........   Passed    0.60 sec
-      Start 26: SolidPlainNoComp_100_2
-26/57 Test #26: SolidPlainNoComp_100_2 ...........   Passed    0.77 sec
-      Start 27: SolidPlainNoComp_100_3
-27/57 Test #27: SolidPlainNoComp_100_3 ...........   Passed    0.74 sec
-      Start 28: SolidPlainNoComp_100_4
-28/57 Test #28: SolidPlainNoComp_100_4 ...........   Passed    1.65 sec
-      Start 29: SolidPlainNoComp_100_5
-29/57 Test #29: SolidPlainNoComp_100_5 ...........   Passed    2.82 sec
-      Start 30: SolidPlainNoComp_100_6
-30/57 Test #30: SolidPlainNoComp_100_6 ...........   Passed    3.02 sec
-      Start 31: SolidPlainComp_100_6
-31/57 Test #31: SolidPlainComp_100_6 .............   Passed    2.74 sec
-      Start 32: GrpcPlainNoComp_100_1
-32/57 Test #32: GrpcPlainNoComp_100_1 ............   Passed    5.97 sec
-      Start 33: GrpcPlainNoComp_100_2
-33/57 Test #33: GrpcPlainNoComp_100_2 ............   Passed    6.66 sec
-      Start 34: GrpcPlainNoComp_100_3
-34/57 Test #34: GrpcPlainNoComp_100_3 ............   Passed    6.58 sec
-      Start 35: GrpcPlainNoComp_100_4
-35/57 Test #35: GrpcPlainNoComp_100_4 ............   Passed    7.86 sec
-      Start 36: GrpcPlainNoComp_100_5
-36/57 Test #36: GrpcPlainNoComp_100_5 ............   Passed    9.21 sec
-      Start 37: GrpcPlainNoComp_100_6
-37/57 Test #37: GrpcPlainNoComp_100_6 ............   Passed    9.62 sec
-      Start 38: GrpcPlainNoComp_100_1_Stream
-38/57 Test #38: GrpcPlainNoComp_100_1_Stream .....   Passed    3.03 sec
-      Start 39: GrpcPlainNoComp_100_2_Stream
-39/57 Test #39: GrpcPlainNoComp_100_2_Stream .....   Passed    3.16 sec
-      Start 40: GrpcPlainNoComp_100_3_Stream
-40/57 Test #40: GrpcPlainNoComp_100_3_Stream .....   Passed    3.19 sec
-      Start 41: GrpcPlainNoComp_100_4_Stream
-41/57 Test #41: GrpcPlainNoComp_100_4_Stream .....   Passed    3.77 sec
-      Start 42: GrpcPlainNoComp_100_5_Stream
-42/57 Test #42: GrpcPlainNoComp_100_5_Stream .....   Passed    4.76 sec
-      Start 43: GrpcPlainNoComp_100_6_Stream
-43/57 Test #43: GrpcPlainNoComp_100_6_Stream .....   Passed    4.93 sec
-      Start 44: CapnpPlainNoComp_100_1
-44/57 Test #44: CapnpPlainNoComp_100_1 ...........   Passed    4.60 sec
-      Start 45: CapnpPlainNoComp_100_2
-45/57 Test #45: CapnpPlainNoComp_100_2 ...........   Passed    5.28 sec
-      Start 46: CapnpPlainNoComp_100_3
-46/57 Test #46: CapnpPlainNoComp_100_3 ...........   Passed    4.93 sec
-      Start 47: CapnpPlainNoComp_100_4
-47/57 Test #47: CapnpPlainNoComp_100_4 ...........   Passed    7.51 sec
-      Start 48: CapnpPlainNoComp_100_5
-48/57 Test #48: CapnpPlainNoComp_100_5 ...........   Passed    9.38 sec
-      Start 49: CapnpPlainNoComp_100_6
-49/57 Test #49: CapnpPlainNoComp_100_6 ...........   Passed   10.40 sec
-      Start 50: CapnpPlainNoComp_10_1
-50/57 Test #50: CapnpPlainNoComp_10_1 ............   Passed    4.35 sec
-      Start 51: CapnpPlainNoComp_10_2
-51/57 Test #51: CapnpPlainNoComp_10_2 ............   Passed    5.10 sec
-      Start 52: CapnpPlainNoComp_10_3
-52/57 Test #52: CapnpPlainNoComp_10_3 ............   Passed    4.70 sec
-      Start 53: CapnpPlainNoComp_10_4
-53/57 Test #53: CapnpPlainNoComp_10_4 ............   Passed    7.27 sec
-      Start 54: CapnpPlainNoComp_10_5
-54/57 Test #54: CapnpPlainNoComp_10_5 ............   Passed    9.91 sec
-      Start 55: CapnpPlainNoComp_10_6
-55/57 Test #55: CapnpPlainNoComp_10_6 ............   Passed   10.13 sec
-      Start 56: ThreadPoolSolid1
-56/57 Test #56: ThreadPoolSolid1 .................   Passed    5.28 sec
-      Start 57: ThreadPoolErez1
-57/57 Test #57: ThreadPoolErez1 ..................   Passed   10.79 sec
-```
+        Start   1: SolidEcho100_1000
+  1/100 Test   #1: SolidEcho100_1000 ................   Passed    0.44 sec
+        Start   2: SolidEcho200_1000
+  2/100 Test   #2: SolidEcho200_1000 ................   Passed    0.86 sec
+        Start   3: SolidEcho400_1000
+  3/100 Test   #3: SolidEcho400_1000 ................   Passed    1.67 sec
+        Start   4: SolidRelayEcho100_1000
+  4/100 Test   #4: SolidRelayEcho100_1000 ...........   Passed    0.92 sec
+        Start   5: SolidRelayEcho200_1000
+  5/100 Test   #5: SolidRelayEcho200_1000 ...........   Passed    1.69 sec
+        Start   6: SolidRelayEcho400_1000
+  6/100 Test   #6: SolidRelayEcho400_1000 ...........   Passed    3.48 sec
+        Start   7: BoostEcho100_1000
+  7/100 Test   #7: BoostEcho100_1000 ................   Passed    0.45 sec
+        Start   8: BoostEcho200_1000
+  8/100 Test   #8: BoostEcho200_1000 ................   Passed    0.87 sec
+        Start   9: BoostEcho400_1000
+  9/100 Test   #9: BoostEcho400_1000 ................   Passed    1.67 sec
+        Start  10: BoostCoroEcho100_1000
+ 10/100 Test  #10: BoostCoroEcho100_1000 ............   Passed    0.46 sec
+        Start  11: BoostCoroEcho200_1000
+ 11/100 Test  #11: BoostCoroEcho200_1000 ............   Passed    0.87 sec
+        Start  12: BoostCoroEcho400_1000
+ 12/100 Test  #12: BoostCoroEcho400_1000 ............   Passed    1.63 sec
+        Start  13: BoostRelayEcho100_1000
+ 13/100 Test  #13: BoostRelayEcho100_1000 ...........   Passed    4.38 sec
+        Start  14: BoostRelayEcho200_1000
+ 14/100 Test  #14: BoostRelayEcho200_1000 ...........   Passed    4.40 sec
+        Start  15: BoostRelayEcho400_1000
+ 15/100 Test  #15: BoostRelayEcho400_1000 ...........   Passed    4.61 sec
+        Start  16: Boost1k
+ 16/100 Test  #16: Boost1k ..........................   Passed    0.01 sec
+        Start  17: Cereal1k
+ 17/100 Test  #17: Cereal1k .........................   Passed    0.01 sec
+        Start  18: CerealPortable1k
+ 18/100 Test  #18: CerealPortable1k .................   Passed    0.01 sec
+        Start  19: SolidV3_1k
+ 19/100 Test  #19: SolidV3_1k .......................   Passed    0.01 sec
+        Start  20: Boost10k
+ 20/100 Test  #20: Boost10k .........................   Passed    0.06 sec
+        Start  21: Cereal10k
+ 21/100 Test  #21: Cereal10k ........................   Passed    0.05 sec
+        Start  22: CerealPortable10k
+ 22/100 Test  #22: CerealPortable10k ................   Passed    0.05 sec
+        Start  23: SolidV3_10k
+ 23/100 Test  #23: SolidV3_10k ......................   Passed    0.06 sec
+        Start  24: Boost100k
+ 24/100 Test  #24: Boost100k ........................   Passed    0.50 sec
+        Start  25: Cereal100k
+ 25/100 Test  #25: Cereal100k .......................   Passed    0.49 sec
+        Start  26: CerealPortable100k
+ 26/100 Test  #26: CerealPortable100k ...............   Passed    0.42 sec
+        Start  27: SolidV3_100k
+ 27/100 Test  #27: SolidV3_100k .....................   Passed    0.46 sec
+        Start  28: SolidPlainNoComp_100_1
+ 28/100 Test  #28: SolidPlainNoComp_100_1 ...........   Passed    0.61 sec
+        Start  29: SolidPlainNoComp_100_2
+ 29/100 Test  #29: SolidPlainNoComp_100_2 ...........   Passed    0.79 sec
+        Start  30: SolidPlainNoComp_100_3
+ 30/100 Test  #30: SolidPlainNoComp_100_3 ...........   Passed    0.74 sec
+        Start  31: SolidPlainNoComp_100_4
+ 31/100 Test  #31: SolidPlainNoComp_100_4 ...........   Passed    1.81 sec
+        Start  32: SolidPlainNoComp_100_5
+ 32/100 Test  #32: SolidPlainNoComp_100_5 ...........   Passed    3.21 sec
+        Start  33: SolidPlainNoComp_100_6
+ 33/100 Test  #33: SolidPlainNoComp_100_6 ...........   Passed    3.52 sec
+        Start  34: SolidPlainComp_100_6
+ 34/100 Test  #34: SolidPlainComp_100_6 .............   Passed    2.77 sec
+        Start  35: GrpcPlainNoComp_100_1
+ 35/100 Test  #35: GrpcPlainNoComp_100_1 ............   Passed    6.30 sec
+        Start  36: GrpcPlainNoComp_100_2
+ 36/100 Test  #36: GrpcPlainNoComp_100_2 ............   Passed    6.85 sec
+        Start  37: GrpcPlainNoComp_100_3
+ 37/100 Test  #37: GrpcPlainNoComp_100_3 ............   Passed    6.89 sec
+        Start  38: GrpcPlainNoComp_100_4
+ 38/100 Test  #38: GrpcPlainNoComp_100_4 ............   Passed    7.81 sec
+        Start  39: GrpcPlainNoComp_100_5
+ 39/100 Test  #39: GrpcPlainNoComp_100_5 ............   Passed    8.93 sec
+        Start  40: GrpcPlainNoComp_100_6
+ 40/100 Test  #40: GrpcPlainNoComp_100_6 ............   Passed    9.30 sec
+        Start  41: GrpcPlainNoComp_100_1_Stream
+ 41/100 Test  #41: GrpcPlainNoComp_100_1_Stream .....   Passed    3.33 sec
+        Start  42: GrpcPlainNoComp_100_2_Stream
+ 42/100 Test  #42: GrpcPlainNoComp_100_2_Stream .....   Passed    3.57 sec
+        Start  43: GrpcPlainNoComp_100_3_Stream
+ 43/100 Test  #43: GrpcPlainNoComp_100_3_Stream .....   Passed    3.56 sec
+        Start  44: GrpcPlainNoComp_100_4_Stream
+ 44/100 Test  #44: GrpcPlainNoComp_100_4_Stream .....   Passed    4.04 sec
+        Start  45: GrpcPlainNoComp_100_5_Stream
+ 45/100 Test  #45: GrpcPlainNoComp_100_5_Stream .....   Passed    4.59 sec
+        Start  46: GrpcPlainNoComp_100_6_Stream
+ 46/100 Test  #46: GrpcPlainNoComp_100_6_Stream .....   Passed    4.74 sec
+        Start  47: CapnpPlainNoComp_100_1
+ 47/100 Test  #47: CapnpPlainNoComp_100_1 ...........   Passed    4.65 sec
+        Start  48: CapnpPlainNoComp_100_2
+ 48/100 Test  #48: CapnpPlainNoComp_100_2 ...........   Passed    5.28 sec
+        Start  49: CapnpPlainNoComp_100_3
+ 49/100 Test  #49: CapnpPlainNoComp_100_3 ...........   Passed    4.90 sec
+        Start  50: CapnpPlainNoComp_100_4
+ 50/100 Test  #50: CapnpPlainNoComp_100_4 ...........   Passed    7.31 sec
+        Start  51: CapnpPlainNoComp_100_5
+ 51/100 Test  #51: CapnpPlainNoComp_100_5 ...........   Passed    9.31 sec
+        Start  52: CapnpPlainNoComp_100_6
+ 52/100 Test  #52: CapnpPlainNoComp_100_6 ...........   Passed   10.33 sec
+        Start  53: CapnpPlainNoComp_10_1
+ 53/100 Test  #53: CapnpPlainNoComp_10_1 ............   Passed    4.36 sec
+        Start  54: CapnpPlainNoComp_10_2
+ 54/100 Test  #54: CapnpPlainNoComp_10_2 ............   Passed    5.05 sec
+        Start  55: CapnpPlainNoComp_10_3
+ 55/100 Test  #55: CapnpPlainNoComp_10_3 ............   Passed    4.62 sec
+        Start  56: CapnpPlainNoComp_10_4
+ 56/100 Test  #56: CapnpPlainNoComp_10_4 ............   Passed    7.06 sec
+        Start  57: CapnpPlainNoComp_10_5
+ 57/100 Test  #57: CapnpPlainNoComp_10_5 ............   Passed    8.48 sec
+        Start  58: CapnpPlainNoComp_10_6
+ 58/100 Test  #58: CapnpPlainNoComp_10_6 ............   Passed   10.13 sec
+        Start  59: ThreadPoolSolid1
+ 59/100 Test  #59: ThreadPoolSolid1 .................   Passed    4.34 sec
+        Start  60: ThreadPoolRigtorp1
+ 60/100 Test  #60: ThreadPoolRigtorp1 ...............   Passed    6.45 sec
+        Start  61: ThreadPoolErez1
+ 61/100 Test  #61: ThreadPoolErez1 ..................   Passed   10.59 sec
+        Start  62: FunctionStd1
+ 62/100 Test  #62: FunctionStd1 .....................   Passed    2.58 sec
+        Start  63: FunctionMStd1
+ 63/100 Test  #63: FunctionMStd1 ....................   Passed    2.31 sec
+        Start  64: FunctionBoost1
+ 64/100 Test  #64: FunctionBoost1 ...................   Passed    2.10 sec
+        Start  65: FunctionSolid1
+ 65/100 Test  #65: FunctionSolid1 ...................   Passed    2.09 sec
+        Start  66: FunctionSolid641
+ 66/100 Test  #66: FunctionSolid641 .................   Passed    2.25 sec
+        Start  67: FunctionStd2
+ 67/100 Test  #67: FunctionStd2 .....................   Passed    2.64 sec
+        Start  68: FunctionMStd2
+ 68/100 Test  #68: FunctionMStd2 ....................   Passed    2.16 sec
+        Start  69: FunctionBoost2
+ 69/100 Test  #69: FunctionBoost2 ...................   Passed    2.44 sec
+        Start  70: FunctionSolid2
+ 70/100 Test  #70: FunctionSolid2 ...................   Passed    2.49 sec
+        Start  71: FunctionSolid642
+ 71/100 Test  #71: FunctionSolid642 .................   Passed    2.35 sec
+        Start  72: FunctionStd3
+ 72/100 Test  #72: FunctionStd3 .....................   Passed    4.62 sec
+        Start  73: FunctionMStd3
+ 73/100 Test  #73: FunctionMStd3 ....................   Passed    2.35 sec
+        Start  74: FunctionBoost3
+ 74/100 Test  #74: FunctionBoost3 ...................   Passed    2.08 sec
+        Start  75: FunctionSolid3
+ 75/100 Test  #75: FunctionSolid3 ...................   Passed    2.11 sec
+        Start  76: FunctionSolid643
+ 76/100 Test  #76: FunctionSolid643 .................   Passed    2.21 sec
+        Start  77: FunctionStd4
+ 77/100 Test  #77: FunctionStd4 .....................   Passed    4.34 sec
+        Start  78: FunctionMStd4
+ 78/100 Test  #78: FunctionMStd4 ....................   Passed    4.09 sec
+        Start  79: FunctionBoost4
+ 79/100 Test  #79: FunctionBoost4 ...................   Passed    4.50 sec
+        Start  80: FunctionSolid4
+ 80/100 Test  #80: FunctionSolid4 ...................   Passed    4.18 sec
+        Start  81: FunctionSolid644
+ 81/100 Test  #81: FunctionSolid644 .................   Passed    2.38 sec
+        Start  82: FunctionBoost5
+ 82/100 Test  #82: FunctionBoost5 ...................   Passed    4.24 sec
+        Start  83: FunctionSolid5
+ 83/100 Test  #83: FunctionSolid5 ...................   Passed    4.39 sec
+        Start  84: FunctionSolid645
+ 84/100 Test  #84: FunctionSolid645 .................   Passed    2.26 sec
+        Start  85: FunctionBoost6
+ 85/100 Test  #85: FunctionBoost6 ...................   Passed    4.85 sec
+        Start  86: FunctionSolid6
+ 86/100 Test  #86: FunctionSolid6 ...................   Passed    4.76 sec
+        Start  87: FunctionSolid646
+ 87/100 Test  #87: FunctionSolid646 .................   Passed    2.23 sec
+        Start  88: FunctionBoost7
+ 88/100 Test  #88: FunctionBoost7 ...................   Passed    5.14 sec
+        Start  89: FunctionSolid7
+ 89/100 Test  #89: FunctionSolid7 ...................   Passed    4.82 sec
+        Start  90: FunctionSolid647
+ 90/100 Test  #90: FunctionSolid647 .................   Passed    2.29 sec
+        Start  91: FunctionStd8
+ 91/100 Test  #91: FunctionStd8 .....................   Passed    4.77 sec
+        Start  92: FunctionMStd8
+ 92/100 Test  #92: FunctionMStd8 ....................   Passed    4.70 sec
+        Start  93: FunctionBoost8
+ 93/100 Test  #93: FunctionBoost8 ...................   Passed    4.87 sec
+        Start  94: FunctionSolid8
+ 94/100 Test  #94: FunctionSolid8 ...................   Passed    4.80 sec
+        Start  95: FunctionSolid648
+ 95/100 Test  #95: FunctionSolid648 .................   Passed    4.71 sec
+        Start  96: FunctionStd16
+ 96/100 Test  #96: FunctionStd16 ....................   Passed    7.45 sec
+        Start  97: FunctionMStd16
+ 97/100 Test  #97: FunctionMStd16 ...................   Passed    7.16 sec
+        Start  98: FunctionBoost16
+ 98/100 Test  #98: FunctionBoost16 ..................   Passed    7.43 sec
+        Start  99: FunctionSolid16
+ 99/100 Test  #99: FunctionSolid16 ..................   Passed    7.33 sec
+        Start 100: FunctionSolid6416
+100/100 Test #100: FunctionSolid6416 ................   Passed    7.53 sec
 
-On a 12 gen i7, WSL Fedora 36 (20230917):
-```
-Test project /home/vipal/work/benchmark/build/release
-      Start  1: SolidEcho100_1000
- 1/43 Test  #1: SolidEcho100_1000 ................   Passed    0.60 sec
-      Start  2: SolidEcho200_1000
- 2/43 Test  #2: SolidEcho200_1000 ................   Passed    1.13 sec
-      Start  3: SolidEcho400_1000
- 3/43 Test  #3: SolidEcho400_1000 ................   Passed    2.16 sec
-      Start  4: SolidRelayEcho100_1000
- 4/43 Test  #4: SolidRelayEcho100_1000 ...........   Passed    1.81 sec
-      Start  5: SolidRelayEcho200_1000
- 5/43 Test  #5: SolidRelayEcho200_1000 ...........   Passed    3.56 sec
-      Start  6: SolidRelayEcho400_1000
- 6/43 Test  #6: SolidRelayEcho400_1000 ...........   Passed    5.33 sec
-      Start  7: BoostEcho100_1000
- 7/43 Test  #7: BoostEcho100_1000 ................   Passed    5.31 sec
-      Start  8: BoostEcho200_1000
- 8/43 Test  #8: BoostEcho200_1000 ................   Passed    5.65 sec
-      Start  9: BoostEcho400_1000
- 9/43 Test  #9: BoostEcho400_1000 ................   Passed    5.95 sec
-      Start 10: BoostRelayEcho100_1000
-10/43 Test #10: BoostRelayEcho100_1000 ...........   Passed    5.72 sec
-      Start 11: BoostRelayEcho200_1000
-11/43 Test #11: BoostRelayEcho200_1000 ...........   Passed    6.31 sec
-      Start 12: BoostRelayEcho400_1000
-12/43 Test #12: BoostRelayEcho400_1000 ...........   Passed    7.43 sec
-      Start 13: Boost1k
-13/43 Test #13: Boost1k ..........................   Passed    0.02 sec
-      Start 14: Cereal1k
-14/43 Test #14: Cereal1k .........................   Passed    0.01 sec
-      Start 15: CerealPortable1k
-15/43 Test #15: CerealPortable1k .................   Passed    0.02 sec
-      Start 16: SolidV3_1k
-16/43 Test #16: SolidV3_1k .......................   Passed    0.02 sec
-      Start 17: Boost10k
-17/43 Test #17: Boost10k .........................   Passed    0.12 sec
-      Start 18: Cereal10k
-18/43 Test #18: Cereal10k ........................   Passed    0.09 sec
-      Start 19: CerealPortable10k
-19/43 Test #19: CerealPortable10k ................   Passed    0.10 sec
-      Start 20: SolidV3_10k
-20/43 Test #20: SolidV3_10k ......................   Passed    0.13 sec
-      Start 21: Boost100k
-21/43 Test #21: Boost100k ........................   Passed    1.04 sec
-      Start 22: Cereal100k
-22/43 Test #22: Cereal100k .......................   Passed    0.74 sec
-      Start 23: CerealPortable100k
-23/43 Test #23: CerealPortable100k ...............   Passed    0.78 sec
-      Start 24: SolidV3_100k
-24/43 Test #24: SolidV3_100k .....................   Passed    0.99 sec
-      Start 25: SolidPlainNoComp_100_1
-25/43 Test #25: SolidPlainNoComp_100_1 ...........   Passed    0.85 sec
-      Start 26: SolidPlainNoComp_100_2
-26/43 Test #26: SolidPlainNoComp_100_2 ...........   Passed    1.96 sec
-      Start 27: SolidPlainNoComp_100_3
-27/43 Test #27: SolidPlainNoComp_100_3 ...........   Passed    1.55 sec
-      Start 28: SolidPlainNoComp_100_4
-28/43 Test #28: SolidPlainNoComp_100_4 ...........   Passed    5.15 sec
-      Start 29: SolidPlainNoComp_100_5
-29/43 Test #29: SolidPlainNoComp_100_5 ...........   Passed    8.38 sec
-      Start 30: SolidPlainNoComp_100_6
-30/43 Test #30: SolidPlainNoComp_100_6 ...........   Passed    9.89 sec
-      Start 31: SolidPlainComp_100_6
-31/43 Test #31: SolidPlainComp_100_6 .............   Passed    9.96 sec
-      Start 32: GrpcPlainNoComp_100_1
-32/43 Test #32: GrpcPlainNoComp_100_1 ............   Passed   14.51 sec
-      Start 33: GrpcPlainNoComp_100_2
-33/43 Test #33: GrpcPlainNoComp_100_2 ............   Passed   15.11 sec
-      Start 34: GrpcPlainNoComp_100_3
-34/43 Test #34: GrpcPlainNoComp_100_3 ............   Passed   14.95 sec
-      Start 35: GrpcPlainNoComp_100_4
-35/43 Test #35: GrpcPlainNoComp_100_4 ............   Passed   16.34 sec
-      Start 36: GrpcPlainNoComp_100_5
-36/43 Test #36: GrpcPlainNoComp_100_5 ............   Passed   17.78 sec
-      Start 37: GrpcPlainNoComp_100_6
-37/43 Test #37: GrpcPlainNoComp_100_6 ............   Passed   18.93 sec
-      Start 38: GrpcPlainNoComp_100_1_Stream
-38/43 Test #38: GrpcPlainNoComp_100_1_Stream .....   Passed    4.12 sec
-      Start 39: GrpcPlainNoComp_100_2_Stream
-39/43 Test #39: GrpcPlainNoComp_100_2_Stream .....   Passed    4.48 sec
-      Start 40: GrpcPlainNoComp_100_3_Stream
-40/43 Test #40: GrpcPlainNoComp_100_3_Stream .....   Passed    4.47 sec
-      Start 41: GrpcPlainNoComp_100_4_Stream
-41/43 Test #41: GrpcPlainNoComp_100_4_Stream .....   Passed    5.94 sec
-      Start 42: GrpcPlainNoComp_100_5_Stream
-42/43 Test #42: GrpcPlainNoComp_100_5_Stream .....   Passed    7.30 sec
-      Start 43: GrpcPlainNoComp_100_6_Stream
-43/43 Test #43: GrpcPlainNoComp_100_6_Stream .....   Passed    7.60 sec
-
-100% tests passed, 0 tests failed out of 43
-```
----------------------------------------------------------------------
-
-On a 12 gen i7, WSL Fedora 36 :
-```
-Test project /home/vipal/work/benchmark/build/release
-      Start  1: SolidEcho100_1000
- 1/37 Test  #1: SolidEcho100_1000 ................   Passed    0.30 sec
-      Start  2: SolidEcho200_1000
- 2/37 Test  #2: SolidEcho200_1000 ................   Passed    0.61 sec
-      Start  3: SolidEcho400_1000
- 3/37 Test  #3: SolidEcho400_1000 ................   Passed    1.11 sec
-      Start  4: SolidRelayEcho100_1000
- 4/37 Test  #4: SolidRelayEcho100_1000 ...........   Passed    1.05 sec
-      Start  5: SolidRelayEcho200_1000
- 5/37 Test  #5: SolidRelayEcho200_1000 ...........   Passed    2.02 sec
-      Start  6: SolidRelayEcho400_1000
- 6/37 Test  #6: SolidRelayEcho400_1000 ...........   Passed    3.57 sec
-      Start  7: BoostEcho100_1000
- 7/37 Test  #7: BoostEcho100_1000 ................   Passed    5.48 sec
-      Start  8: BoostEcho200_1000
- 8/37 Test  #8: BoostEcho200_1000 ................   Passed    5.90 sec
-      Start  9: BoostEcho400_1000
- 9/37 Test  #9: BoostEcho400_1000 ................   Passed    6.45 sec
-      Start 10: BoostRelayEcho100_1000
-10/37 Test #10: BoostRelayEcho100_1000 ...........   Passed    6.15 sec
-      Start 11: BoostRelayEcho200_1000
-11/37 Test #11: BoostRelayEcho200_1000 ...........   Passed    6.61 sec
-      Start 12: BoostRelayEcho400_1000
-12/37 Test #12: BoostRelayEcho400_1000 ...........   Passed    7.13 sec
-      Start 13: Boost1k
-13/37 Test #13: Boost1k ..........................   Passed    0.01 sec
-      Start 14: Cereal1k
-14/37 Test #14: Cereal1k .........................   Passed    0.01 sec
-      Start 15: CerealPortable1k
-15/37 Test #15: CerealPortable1k .................   Passed    0.01 sec
-      Start 16: SolidV3_1k
-16/37 Test #16: SolidV3_1k .......................   Passed    0.01 sec
-      Start 17: Boost10k
-17/37 Test #17: Boost10k .........................   Passed    0.06 sec
-      Start 18: Cereal10k
-18/37 Test #18: Cereal10k ........................   Passed    0.05 sec
-      Start 19: CerealPortable10k
-19/37 Test #19: CerealPortable10k ................   Passed    0.05 sec
-      Start 20: SolidV3_10k
-20/37 Test #20: SolidV3_10k ......................   Passed    0.07 sec
-      Start 21: Boost100k
-21/37 Test #21: Boost100k ........................   Passed    0.59 sec
-      Start 22: Cereal100k
-22/37 Test #22: Cereal100k .......................   Passed    0.49 sec
-      Start 23: CerealPortable100k
-23/37 Test #23: CerealPortable100k ...............   Passed    0.48 sec
-      Start 24: SolidV3_100k
-24/37 Test #24: SolidV3_100k .....................   Passed    0.68 sec
-      Start 25: SolidPlainNoComp_100_1
-25/37 Test #25: SolidPlainNoComp_100_1 ...........   Passed    0.53 sec
-      Start 26: SolidPlainNoComp_100_2
-26/37 Test #26: SolidPlainNoComp_100_2 ...........   Passed    1.07 sec
-      Start 27: SolidPlainNoComp_100_3
-27/37 Test #27: SolidPlainNoComp_100_3 ...........   Passed    0.87 sec
-      Start 28: SolidPlainNoComp_100_4
-28/37 Test #28: SolidPlainNoComp_100_4 ...........   Passed    2.99 sec
-      Start 29: SolidPlainNoComp_100_5
-29/37 Test #29: SolidPlainNoComp_100_5 ...........   Passed    4.84 sec
-      Start 30: SolidPlainNoComp_100_6
-30/37 Test #30: SolidPlainNoComp_100_6 ...........   Passed    5.43 sec
-      Start 31: SolidPlainComp_100_6
-31/37 Test #31: SolidPlainComp_100_6 .............   Passed    5.45 sec
-      Start 32: GrpcPlainNoComp_100_1
-32/37 Test #32: GrpcPlainNoComp_100_1 ............   Passed    5.86 sec
-      Start 33: GrpcPlainNoComp_100_2
-33/37 Test #33: GrpcPlainNoComp_100_2 ............   Passed    6.39 sec
-      Start 34: GrpcPlainNoComp_100_3
-34/37 Test #34: GrpcPlainNoComp_100_3 ............   Passed    6.26 sec
-      Start 35: GrpcPlainNoComp_100_4
-35/37 Test #35: GrpcPlainNoComp_100_4 ............   Passed    7.93 sec
-      Start 36: GrpcPlainNoComp_100_5
-36/37 Test #36: GrpcPlainNoComp_100_5 ............   Passed    9.78 sec
-      Start 37: GrpcPlainNoComp_100_6
-37/37 Test #37: GrpcPlainNoComp_100_6 ............   Passed   11.16 sec
-
-100% tests passed, 0 tests failed out of 37
-```
-AWS aarch64:
-
-```
-Running tests...
-Test project /home/ec2-user/work/benchmark/build/release
-      Start  1: SolidEcho100_1000
- 1/37 Test  #1: SolidEcho100_1000 ................   Passed    1.60 sec
-      Start  2: SolidEcho200_1000
- 2/37 Test  #2: SolidEcho200_1000 ................   Passed    3.43 sec
-      Start  3: SolidEcho400_1000
- 3/37 Test  #3: SolidEcho400_1000 ................   Passed    6.95 sec
-      Start  4: SolidRelayEcho100_1000
- 4/37 Test  #4: SolidRelayEcho100_1000 ...........   Passed    4.64 sec
-      Start  5: SolidRelayEcho200_1000
- 5/37 Test  #5: SolidRelayEcho200_1000 ...........   Passed    9.54 sec
-      Start  6: SolidRelayEcho400_1000
- 6/37 Test  #6: SolidRelayEcho400_1000 ...........   Passed   17.79 sec
-      Start  7: BoostEcho100_1000
- 7/37 Test  #7: BoostEcho100_1000 ................   Passed    5.53 sec
-      Start  8: BoostEcho200_1000
- 8/37 Test  #8: BoostEcho200_1000 ................   Passed    6.17 sec
-      Start  9: BoostEcho400_1000
- 9/37 Test  #9: BoostEcho400_1000 ................   Passed    8.60 sec
-      Start 10: BoostRelayEcho100_1000
-10/37 Test #10: BoostRelayEcho100_1000 ...........   Passed    6.92 sec
-      Start 11: BoostRelayEcho200_1000
-11/37 Test #11: BoostRelayEcho200_1000 ...........   Passed    8.91 sec
-      Start 12: BoostRelayEcho400_1000
-12/37 Test #12: BoostRelayEcho400_1000 ...........   Passed   18.58 sec
-      Start 13: Boost1k
-13/37 Test #13: Boost1k ..........................   Passed    0.04 sec
-      Start 14: Cereal1k
-14/37 Test #14: Cereal1k .........................   Passed    0.03 sec
-      Start 15: CerealPortable1k
-15/37 Test #15: CerealPortable1k .................   Passed    0.03 sec
-      Start 16: SolidV3_1k
-16/37 Test #16: SolidV3_1k .......................   Passed    0.03 sec
-      Start 17: Boost10k
-17/37 Test #17: Boost10k .........................   Passed    0.32 sec
-      Start 18: Cereal10k
-18/37 Test #18: Cereal10k ........................   Passed    0.24 sec
-      Start 19: CerealPortable10k
-19/37 Test #19: CerealPortable10k ................   Passed    0.27 sec
-      Start 20: SolidV3_10k
-20/37 Test #20: SolidV3_10k ......................   Passed    0.30 sec
-      Start 21: Boost100k
-21/37 Test #21: Boost100k ........................   Passed    2.99 sec
-      Start 22: Cereal100k
-22/37 Test #22: Cereal100k .......................   Passed    2.41 sec
-      Start 23: CerealPortable100k
-23/37 Test #23: CerealPortable100k ...............   Passed    2.66 sec
-      Start 24: SolidV3_100k
-24/37 Test #24: SolidV3_100k .....................   Passed    2.97 sec
-      Start 25: SolidPlainNoComp_100_1
-25/37 Test #25: SolidPlainNoComp_100_1 ...........   Passed    2.76 sec
-      Start 26: SolidPlainNoComp_100_2
-26/37 Test #26: SolidPlainNoComp_100_2 ...........   Passed    5.27 sec
-      Start 27: SolidPlainNoComp_100_3
-27/37 Test #27: SolidPlainNoComp_100_3 ...........   Passed    4.49 sec
-      Start 28: SolidPlainNoComp_100_4
-28/37 Test #28: SolidPlainNoComp_100_4 ...........   Passed   12.93 sec
-      Start 29: SolidPlainNoComp_100_5
-29/37 Test #29: SolidPlainNoComp_100_5 ...........   Passed   18.95 sec
-      Start 30: SolidPlainNoComp_100_6
-30/37 Test #30: SolidPlainNoComp_100_6 ...........   Passed   21.71 sec
-      Start 31: SolidPlainComp_100_6
-31/37 Test #31: SolidPlainComp_100_6 .............   Passed   20.82 sec
-      Start 32: GrpcPlainNoComp_100_1
-32/37 Test #32: GrpcPlainNoComp_100_1 ............   Passed   26.80 sec
-      Start 33: GrpcPlainNoComp_100_2
-33/37 Test #33: GrpcPlainNoComp_100_2 ............   Passed   29.30 sec
-      Start 34: GrpcPlainNoComp_100_3
-34/37 Test #34: GrpcPlainNoComp_100_3 ............   Passed   28.59 sec
-      Start 35: GrpcPlainNoComp_100_4
-35/37 Test #35: GrpcPlainNoComp_100_4 ............   Passed   37.63 sec
-      Start 36: GrpcPlainNoComp_100_5
-36/37 Test #36: GrpcPlainNoComp_100_5 ............   Passed   45.39 sec
-      Start 37: GrpcPlainNoComp_100_6
-37/37 Test #37: GrpcPlainNoComp_100_6 ............   Passed   49.55 sec
-
-100% tests passed, 0 tests failed out of 37
+100% tests passed, 0 tests failed out of 100
 ```

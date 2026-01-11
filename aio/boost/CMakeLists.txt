@@ -24,6 +24,10 @@ add_test(BoostEcho100_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_echo_server 100
 add_test(BoostEcho200_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_echo_server 10000 200 & ../echo_client -N 200 -c localhost:10000 -R 1000)")
 add_test(BoostEcho400_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_echo_server 10000 400 & ../echo_client -N 400 -c localhost:10000 -R 1000)")
 
+add_test(BoostCoroEcho100_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_coro_echo_server 10000 100 & ../echo_client -N 100 -c localhost:10000 -R 1000)")
+add_test(BoostCoroEcho200_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_coro_echo_server 10000 200 & ../echo_client -N 200 -c localhost:10000 -R 1000)")
+add_test(BoostCoroEcho400_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_coro_echo_server 10000 400 & ../echo_client -N 400 -c localhost:10000 -R 1000)")
+
 
 add_test(BoostRelayEcho100_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_echo_server 10000 100 & ./boost_relay_server 20000 10000 100 & ../echo_client -N 100 -c localhost:20000 -R 1000)")
 add_test(BoostRelayEcho200_1000 sh -c "(trap 'kill 0' SIGINT; ./boost_echo_server 10000 200 & ./boost_relay_server 20000 10000 200 & ../echo_client -N 200 -c localhost:20000 -R 1000)")

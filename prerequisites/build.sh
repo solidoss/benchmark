@@ -29,10 +29,10 @@ printUsage()
 BOOST_ADDR="https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.bz2"
 OPENSSL_ADDR="https://github.com/openssl/openssl/releases/download/openssl-3.5.0/openssl-3.5.0.tar.gz"
 CARES_ADDR="https://github.com/c-ares/c-ares/releases/download/v1.34.4/c-ares-1.34.4.tar.gz"
-PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v30.2/protobuf-30.2.tar.gz"
-CAPNPROTO_ADDR="https://capnproto.org/capnproto-c++-1.1.0.tar.gz" #"https://github.com/capnproto/capnproto/archive/refs/tags/v1.0.1.tar.gz"
+PROTOBUF_ADDR="https://github.com/protocolbuffers/protobuf/releases/download/v33.2/protobuf-33.2.tar.gz"
+CAPNPROTO_ADDR="https://capnproto.org/capnproto-c++-1.3.0.tar.gz" #"https://github.com/capnproto/capnproto/archive/refs/tags/v1.0.1.tar.gz"
 ABSEIL_ADDR="https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz"
-GRPC_ADDR="https://github.com/grpc/grpc/archive/refs/tags/v1.72.0.tar.gz"
+GRPC_VERSION="v1.76.0"
 BORINGSSL_ADDR="https://github.com/google/boringssl/archive/refs/tags/0.20250114.0.tar.gz"
 SYSTEM=
 BIT64=
@@ -530,17 +530,19 @@ buildGrpc()
     echo "Prepare the $WHAT archive..."
     echo
 
-    ARCH_NAME=`find . -name "$WHAT.tar.gz" | grep -v "old/"`
-    if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
-        mkdir old
-        mv $ARCH_NAME old/
-        echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
-        downloadArchive $ADDR_NAME $WHAT.tar.gz
-        ARCH_NAME=`find . -name "$WHAT.tar.gz" | grep -v "old/"`
-    fi
+    # ARCH_NAME=`find . -name "$WHAT.tar.gz" | grep -v "old/"`
+    # if [ -z "$ARCH_NAME" -o -n "$DOWNLOAD" ] ; then
+    #     mkdir old
+    #     mv $ARCH_NAME old/
+    #     echo "No $WHAT archive found or forced - try download: $ADDR_NAME"
+    #     downloadArchive $ADDR_NAME $WHAT.tar.gz
+    #     ARCH_NAME=`find . -name "$WHAT.tar.gz" | grep -v "old/"`
+    # fi
     
-    echo "Extracting $WHAT [$ARCH_NAME]..."
-    extractTarGz $ARCH_NAME
+    # echo "Extracting $WHAT [$ARCH_NAME]..."
+    # extractTarGz $ARCH_NAME
+
+    git clone --recursive -b "$GRPC_VERSION" https://github.com/grpc/grpc
 
     DIR_NAME=`ls . | grep "$WHAT" | grep -v "tar"`
     echo
@@ -550,17 +552,20 @@ buildGrpc()
     cd $DIR_NAME
     
     mkdir build && cd build
-    cmake -DCMAKE_INSTALL_PREFIX="$EXT_DIR" -DCMAKE_PREFIX_PATH="$EXT_DIR" -DgRPC_ABSL_PROVIDER="package" -DgRPC_CARES_PROVIDER="package" -DgRPC_PROTOBUF_PROVIDER="package" -DgRPC_SSL_PROVIDER="package" -DgRPC_RE2_PROVIDER="package" -DgRPC_ZLIB_PROVIDER="package" -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_LIBDIR="lib" ..
+    #cmake -DCMAKE_INSTALL_PREFIX="$EXT_DIR" -DCMAKE_PREFIX_PATH="$EXT_DIR" -DgRPC_ABSL_PROVIDER="package" -DgRPC_CARES_PROVIDER="package" -DgRPC_PROTOBUF_PROVIDER="package" -DgRPC_SSL_PROVIDER="package" -DgRPC_RE2_PROVIDER="package" -DgRPC_ZLIB_PROVIDER="package" -DCMAKE_CXX_STANDARD=17 -DCMAKE_C_STANDARD=99 -DCMAKE_INSTALL_LIBDIR="lib" ..
+    cmake -DCMAKE_INSTALL_PREFIX="$EXT_DIR" -DCMAKE_PREFIX_PATH="$EXT_DIR" -DCMAKE_CXX_STANDARD=17 -DCMAKE_C_STANDARD=99 -DCMAKE_INSTALL_LIBDIR="lib" ..
     cmake --build . --target all -j8
     cmake --install .
     
     cd ..
+
+    rm -rf $DIR_NAME
     
     echo
     echo "Done $WHAT!"
     echo
 }
-
+99
 EXT_DIR="`pwd`"
 
 BUILD_BOOST_MIN=

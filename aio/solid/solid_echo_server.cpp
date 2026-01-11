@@ -347,8 +347,8 @@ bool parseArguments(Params& _par, int argc, char* argv[])
     if (generic_event<GenericEventE::Start> == _revent) {
         sock.postAccept(_rctx, std::bind(&Listener::onAccept, this, _1, _2));
         // sock.postAccept(_rctx, [this](frame::aio::ReactorContext &_rctx, SocketDevice &_rsd){return onAccept(_rctx, _rsd);});
-        // ptimer = new TimerT(this->proxy());
-        // ptimer->waitUntil(_rctx, _rctx.steadyTime() + std::chrono::seconds(2), [this](frame::aio::ReactorContext& _rctx) { return onTimer(_rctx); });
+        ptimer = new TimerT(this->proxy());
+        ptimer->waitUntil(_rctx, _rctx.steadyTime() + std::chrono::seconds(2), [this](frame::aio::ReactorContext& _rctx) { return onTimer(_rctx); });
     } else if (generic_event<GenericEventE::Kill> == _revent) {
         postStop(_rctx);
     }
@@ -418,9 +418,9 @@ void Listener::onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd)
     solid_log(generic_logger, Info, &rthis << " " << _sz);
     do {
         if (!_rctx.error()) {
-            // solid_log(generic_logger, Info, &rthis << " write: " << _sz);
-            // rthis.recvcnt += _sz;
-            // rthis.sendcrt = _sz;
+            solid_log(generic_logger, Info, &rthis << " write: " << _sz);
+            rthis.recvcnt += _sz;
+            rthis.sendcrt = _sz;
             if (rthis.sock.sendAll(_rctx, rthis.buf, _sz, Connection::onSend)) {
                 if (_rctx.error()) {
                     solid_log(generic_logger, Error, &rthis << " postStop " << rthis.recvcnt << " " << rthis.sendcnt);
@@ -454,8 +454,8 @@ void Listener::onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd)
 {
     Connection& rthis = static_cast<Connection&>(_rctx.actor());
     if (!_rctx.error()) {
-        // solid_log(generic_logger, Info, &rthis << " postRecvSome");
-        // rthis.sendcnt += rthis.sendcrt;
+        solid_log(generic_logger, Info, &rthis << " postRecvSome");
+        rthis.sendcnt += rthis.sendcrt;
         rthis.sock.postRecvSome(_rctx, rthis.buf, BufferCapacity, Connection::onRecv); // fully asynchronous call
     } else {
         solid_log(generic_logger, Error, &rthis << " postStop " << rthis.recvcnt << " " << rthis.sendcnt);

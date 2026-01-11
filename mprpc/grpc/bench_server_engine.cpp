@@ -45,6 +45,7 @@ public:
         std::string server_address(_listen_addr);
 
         ServerBuilder builder;
+
         // Listen on the given address without any authentication mechanism.
         builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
         // Register "service_" as the instance through which we'll communicate with
