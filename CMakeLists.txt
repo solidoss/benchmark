@@ -53,6 +53,7 @@ endif()
 
 include(ExternalProject)
 include(cmake/build_cxxopts.cmake)
+include(cmake/build_gbench.cmake)
 
 #set(EXTERNAL_PATH "${CMAKE_BINARY_DIR}/external")
 
