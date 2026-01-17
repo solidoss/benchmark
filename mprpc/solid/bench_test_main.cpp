@@ -12,12 +12,13 @@ using namespace std;
 struct Parameters {
     Parameters() {}
 
-    bool   secure;
-    bool   compress;
-    bool   print_response;
-    size_t loop_count;
-    size_t connection_count;
-    string text_file_path;
+    bool     secure;
+    bool     compress;
+    bool     print_response;
+    size_t   loop_count;
+    size_t   connection_count;
+    string   text_file_path;
+    uint32_t thread_pool;
 };
 
 //-----------------------------------------------------------------------------
@@ -36,7 +37,7 @@ int main(int argc, char* argv[])
 
     solid::log_start(std::cerr, {"bench_client:VIEW", "solid::frame::mprpc:EW"});
 
-    int listen_port = bench_server::start(p.secure, p.compress, "127.0.0.1:9999");
+    int listen_port = bench_server::start(p.secure, p.compress, "127.0.0.1:9999", p.thread_pool);
 
     if (listen_port > 0) {
         cout << "Listening for connections on: localhost:9999" << endl;
@@ -87,7 +88,8 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
             value<bool>(&_par.print_response)
                 ->implicit_value(true)
                 ->default_value(false),
-            "Prints the response");
+            "Prints the response")
+            ("thread-pool", value<uint32_t>(&_par.thread_pool)->default_value(0)->implicit_value(1), "Use thread pool - number of threads");
         // clang-format on
         variables_map vm;
         store(parse_command_line(argc, argv, desc), vm);

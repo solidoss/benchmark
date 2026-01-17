@@ -79,8 +79,6 @@ target_link_libraries(bench_client
 
 add_executable(bench_test bench_test_main.cpp)
 
-add_dependencies(bench_test  bench_text_files)
-
 target_link_libraries(bench_test
     bench_client_engine
     bench_server_engine
@@ -88,6 +86,8 @@ target_link_libraries(bench_test
     ${SYSTEM_BASIC_LIBRARIES}
     ${SYS_DYNAMIC_LOAD_LIB}
 )
+
+add_dependencies(bench_test  bench_text_files)
 
 ## Test suite ==============================================================
 
@@ -99,4 +99,12 @@ add_test(NAME SolidPlainNoComp_100_5 COMMAND bench_test -s 0 --compress 0 -N 100
 add_test(NAME SolidPlainNoComp_100_6 COMMAND bench_test -s 0 --compress 0 -N 100 -t ../test_6.txt)
 
 add_test(NAME SolidPlainComp_100_6 COMMAND bench_test -s 0 --compress 1 -N 100 -t ../test_6.txt)
+
+add_test(NAME SolidPlainNoComp_TP4_100_1 COMMAND bench_test -s 0 --compress 0 -N 100 --thread-pool 4 -t ../test_1.txt)
+add_test(NAME SolidPlainNoComp_TP4_100_2 COMMAND bench_test -s 0 --compress 0 -N 100 --thread-pool 4 -t ../test_2.txt)
+add_test(NAME SolidPlainNoComp_TP4_100_3 COMMAND bench_test -s 0 --compress 0 -N 100 --thread-pool 4 -t ../test_3.txt)
+add_test(NAME SolidPlainNoComp_TP4_100_4 COMMAND bench_test -s 0 --compress 0 -N 100 --thread-pool 4 -t ../test_4.txt)
+add_test(NAME SolidPlainNoComp_TP4_100_5 COMMAND bench_test -s 0 --compress 0 -N 100 --thread-pool 4 -t ../test_5.txt)
+add_test(NAME SolidPlainNoComp_TP4_100_6 COMMAND bench_test -s 0 --compress 0 -N 100 --thread-pool 4 -t ../test_6.txt)
+
 

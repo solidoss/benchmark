@@ -9,8 +9,11 @@
 #include "solid/system/log.hpp"
 
 #include "solid/utility/pool.hpp"
+#include "solid/utility/threadpool.hpp"
 
 #include "solid/frame/aio/aioresolver.hpp"
+#include <any>
+#include <functional>
 
 static void message_created();
 
@@ -21,22 +24,29 @@ static void message_created();
 
 using namespace solid;
 using namespace std;
-
-using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
-
 namespace bench_server {
 
 namespace {
+struct Context;
+
+using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
+using ThreadPoolT   = ThreadPool<Function<void(Context&)>, Function<void(Context&)>>;
+
 struct Context {
-    Context()
+    Context(bool _use_tp)
         : ipcservice(manager)
+        , use_tp(_use_tp)
     {
     }
     AioSchedulerT scheduler;
 
     frame::Manager         manager;
     frame::mprpc::ServiceT ipcservice;
+    const bool             use_tp;
+    ThreadPoolT            tp;
 };
+
+using ContextRefT = std::reference_wrapper<Context>;
 
 auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
     using PtrT  = std::decay_t<decltype(_rmsgptr)>;
@@ -61,18 +71,27 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
 
     if (_rrecv_msg_ptr) {
         solid_check(!_rsent_msg_ptr);
-        if (true) {
-            istringstream iss{std::move(_rrecv_msg_ptr->str)};
-            while (!iss.eof()) {
-                _rrecv_msg_ptr->vec.emplace_back();
-                iss >> _rrecv_msg_ptr->vec.back();
+        auto exec = [recipient_id = _rctx.recipientId(), _rrecv_msg_ptr = std::move(_rrecv_msg_ptr)](Context& _rctx) mutable {
+            if (true) {
+                istringstream iss{std::move(_rrecv_msg_ptr->str)};
+                while (!iss.eof()) {
+                    _rrecv_msg_ptr->vec.emplace_back();
+                    iss >> _rrecv_msg_ptr->vec.back();
+                }
+                _rrecv_msg_ptr->str.clear();
+            } else {
+                _rrecv_msg_ptr->vec.emplace_back(std::move(_rrecv_msg_ptr->str));
             }
-            _rrecv_msg_ptr->str.clear();
+            // frame::mprpc::ConstMessagePointerT<M> send_msg{std::move(_rrecv_msg_ptr)};
+            solid_check(!_rctx.ipcservice.sendResponse(recipient_id,
+                std::move(_rrecv_msg_ptr)));
+        };
+        auto& ctx_ref = *_rctx.service().any().cast<ContextRefT>();
+        if (ctx_ref.get().use_tp) {
+            ctx_ref.get().tp.pushOne(std::move(exec));
         } else {
-            _rrecv_msg_ptr->vec.emplace_back(std::move(_rrecv_msg_ptr->str));
+            exec(ctx_ref);
         }
-        solid_check(!_rctx.service().sendResponse(_rctx.recipientId(),
-            std::move(_rrecv_msg_ptr)));
     }
 
     if (_rsent_msg_ptr) {
@@ -82,13 +101,16 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
 } // namespace
 
 int start(const bool _secure, const bool _compress,
-    const std::string& _listen_addr)
+    const std::string& _listen_addr, uint32_t _tp_thread_count)
 {
     ErrorConditionT err;
 
-    ctx.reset(new Context);
+    ctx.reset(new Context(_tp_thread_count != 0));
 
     ctx->scheduler.start(3);
+    if (_tp_thread_count) {
+        ctx->tp.start({_tp_thread_count, 1000, 0}, [](const size_t, Context&) {}, [](const size_t, Context&) {}, ref(*ctx));
+    }
 
     {
         auto proto = frame::mprpc::serialization_v3::create_protocol<
@@ -96,7 +118,7 @@ int start(const bool _secure, const bool _compress,
             reflection::v1::metadata::factory, [&](auto& _rmap) {
                 auto lambda = [&](const uint8_t _id, const std::string_view _name,
                                   auto const& _rtype) {
-                    using TypeT = typename std::decay_t<decltype(_rtype)>::TypeT;
+                    using TypeT = typename std::decay_t<decltype(_rtype)>::type;
                     _rmap.template registerMessage<TypeT>(_id, _name, complete_message<TypeT>, create_message_ptr);
                 };
                 bench::configure_protocol(lambda);
@@ -130,7 +152,7 @@ int start(const bool _secure, const bool _compress,
 
         {
             frame::mprpc::ServiceStartStatus start_status;
-            ctx->ipcservice.start(start_status, std::move(cfg));
+            ctx->ipcservice.start(start_status, std::move(cfg), std::ref(*ctx));
 
             solid_dbg(generic_logger, Info, "server listens on: " << start_status.listen_addr_vec_.back());
             return start_status.listen_addr_vec_.back().port();
@@ -143,6 +165,7 @@ void stop(const bool _wait)
     cout << "Server Messages created: " << msg_count.load() << endl;
     ctx->manager.stop();
     ctx->scheduler.stop(_wait);
+    cout << "ThreadPool stats: " << ctx->tp.statistic() << endl;
     ctx.reset();
 }
 } // namespace bench_server

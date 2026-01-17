@@ -6,11 +6,11 @@ target_link_libraries(bench_function
 
 add_executable(gbench_function gbench_function.cpp)
 set_property(TARGET gbench_function PROPERTY CXX_STANDARD 23)
-add_dependencies(gbench_function build_gbench)
 target_link_libraries(gbench_function
     SolidFrame::solid_utility
     ${GBENCH_LIBS}
 )
+add_dependencies(gbench_function build_gbench)
 
 add_test(NAME FunctionStd1          COMMAND bench_function S 1 10000 10000)
 add_test(NAME FunctionMStd1         COMMAND bench_function M 1 10000 10000)

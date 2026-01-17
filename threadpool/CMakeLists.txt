@@ -1,3 +1,5 @@
 add_subdirectory(solid)
+if(NOT APPLE)
 add_subdirectory(rigtorp)
 add_subdirectory(erez_strauss_mpmcq)
+endif()

@@ -1,6 +1,7 @@
 
 #include "boost/program_options.hpp"
 #include "solid/system/common.hpp"
+#include <cstdint>
 #include <iostream>
 #include <signal.h>
 #include <string>
@@ -26,10 +27,11 @@ struct Parameters {
     bool   dbg_console;
     bool   dbg_buffered;
 
-    bool   secure;
-    bool   compress;
-    string listener_port;
-    string listener_addr;
+    bool     secure;
+    bool     compress;
+    string   listener_port;
+    string   listener_addr;
+    uint32_t thread_pool;
 };
 
 //-----------------------------------------------------------------------------
@@ -51,7 +53,10 @@ int main(int argc, char* argv[])
 #endif
 
     auto listen_port = bench_server::start(
-        p.secure, p.compress, std::move(p.listener_addr + ':' + p.listener_port));
+        p.secure,
+        p.compress,
+        std::move(p.listener_addr + ':' + p.listener_port),
+        p.thread_pool);
 
     if (listen_port > 0) {
         cout << "Listening for connections on: " << p.listener_addr << ':'
@@ -105,7 +110,8 @@ bool parseArguments(Parameters& _par, int argc, char* argv[])
                 value<bool>(&_par.compress)
                     ->implicit_value(true)
                     ->default_value(true),
-                "Use Snappy to compress communication");
+                "Use Snappy to compress communication")
+            ("thread-pool,t", value<uint32_t>(&_par.thread_pool)->default_value(0)->implicit_value(1), "Use thread pool - number of threads");
         // clang-format on
         variables_map vm;
         store(parse_command_line(argc, argv, desc), vm);

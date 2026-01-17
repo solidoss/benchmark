@@ -169,7 +169,7 @@ TestBase* create_test(const FunctionChoice _fnc_choice, const size_t _closure_si
     case FunctionChoice::Std:
         return create_test<std::function<uint64_t(const size_t)>>(_closure_size);
 #endif
-#ifdef BENCH_STD_M
+#if defined(BENCH_STD_M) and defined(__cpp_lib_move_only_function)
     case FunctionChoice::MStd:
         return create_test<std::move_only_function<uint64_t(const size_t) const>>(_closure_size);
 #endif

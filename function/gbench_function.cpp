@@ -116,11 +116,15 @@ static void BM_CreateAndRun(benchmark::State& state)
 }
 
 // Type aliases for function types
-using StdFunction         = std::function<uint64_t(const size_t)>;
+using StdFunction = std::function<uint64_t(const size_t)>;
+#if defined(__cpp_lib_move_only_function)
 using StdMoveOnlyFunction = std::move_only_function<uint64_t(const size_t) const>;
-using SolidFunction       = solid::Function<uint64_t(const size_t)>;
-using SolidFunction64     = solid::Function64T<uint64_t(const size_t)>;
-using BoostFunction       = boost::function<uint64_t(const size_t)>;
+#else
+using StdMoveOnlyFunction = std::function<uint64_t(const size_t)>;
+#endif
+using SolidFunction   = solid::Function<uint64_t(const size_t)>;
+using SolidFunction64 = solid::Function64T<uint64_t(const size_t)>;
+using BoostFunction   = boost::function<uint64_t(const size_t)>;
 
 // Closure size 1 (8 bytes)
 constexpr size_t CS1 = 1;

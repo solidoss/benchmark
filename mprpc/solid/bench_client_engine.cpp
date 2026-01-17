@@ -265,7 +265,7 @@ int start(const bool _secure, const bool _compress,
             reflection::v1::metadata::factory, [&](auto& _rmap) {
                 auto lambda = [&](const uint8_t _id, const std::string_view _name,
                                   auto const& _rtype) {
-                    using TypeT = typename std::decay_t<decltype(_rtype)>::TypeT;
+                    using TypeT = typename std::decay_t<decltype(_rtype)>::type;
                     _rmap.template registerMessage<TypeT>(_id, _name,
                         complete_message<TypeT>, create_message_ptr);
                 };
