@@ -15,7 +15,8 @@
 #include <any>
 #include <functional>
 
-static void message_created();
+static void request_created();
+static void response_created();
 
 #include "bench_protocol.hpp"
 #include "bench_server_engine.hpp"
@@ -30,7 +31,7 @@ namespace {
 struct Context;
 
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
-using ThreadPoolT   = ThreadPool<Function<void(Context&)>, Function<void(Context&)>>;
+using ThreadPoolT   = ThreadPool<SmallFunctionT<void(Context&)>, SmallFunctionT<void(Context&)>>;
 
 struct Context {
     Context(bool _use_tp)
@@ -53,17 +54,28 @@ auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
     using ElemT = typename PtrT::element_type;
 
     _rmsgptr = Pool<ElemT>::create();
-    _rmsgptr->str.clear();
-    _rmsgptr->vec.clear();
 };
 
 unique_ptr<Context> ctx;
-atomic_size_t       msg_count{0};
+atomic_size_t       req_count{0};
+atomic_size_t       res_count{0};
 
-template <class M>
+template <typename Req, typename Res>
+void complete_catch_all(frame::mprpc::ConnectionContext&,
+    frame::mprpc::SendMessagePointerT<Req>& _rsent_msg_ptr,
+    frame::mprpc::RecvMessagePointerT<Res>&,
+    ErrorConditionT const&)
+{
+    if constexpr (std::is_same_v<Req, bench::Response>) {
+        solid_check(_rsent_msg_ptr.useCount() == 1);
+    }
+    _rsent_msg_ptr.reset();
+}
+
+template <typename Req, typename Res>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
-    frame::mprpc::SendMessagePointerT<M>&              _rsent_msg_ptr,
-    frame::mprpc::RecvMessagePointerT<M>&              _rrecv_msg_ptr,
+    frame::mprpc::SendMessagePointerT<Req>&            _rsent_msg_ptr,
+    frame::mprpc::RecvMessagePointerT<Res>&            _rrecv_msg_ptr,
     ErrorConditionT const&                             _rerror)
 {
     solid_dbg(generic_logger, Info, "received message on server");
@@ -72,19 +84,19 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
     if (_rrecv_msg_ptr) {
         solid_check(!_rsent_msg_ptr);
         auto exec = [recipient_id = _rctx.recipientId(), _rrecv_msg_ptr = std::move(_rrecv_msg_ptr)](Context& _rctx) mutable {
+            auto res = solid::frame::mprpc::make_pool_message<bench::Response>(*_rrecv_msg_ptr);
             if (true) {
                 istringstream iss{std::move(_rrecv_msg_ptr->str)};
                 while (!iss.eof()) {
-                    _rrecv_msg_ptr->vec.emplace_back();
-                    iss >> _rrecv_msg_ptr->vec.back();
+                    res->vec.emplace_back();
+                    iss >> res->vec.back();
                 }
                 _rrecv_msg_ptr->str.clear();
             } else {
-                _rrecv_msg_ptr->vec.emplace_back(std::move(_rrecv_msg_ptr->str));
+                res->vec.emplace_back(std::move(_rrecv_msg_ptr->str));
             }
-            // frame::mprpc::ConstMessagePointerT<M> send_msg{std::move(_rrecv_msg_ptr)};
             solid_check(!_rctx.ipcservice.sendResponse(recipient_id,
-                std::move(_rrecv_msg_ptr)));
+                std::move(res)));
         };
         auto& ctx_ref = *_rctx.service().any().cast<ContextRefT>();
         if (ctx_ref.get().use_tp) {
@@ -119,7 +131,11 @@ int start(const bool _secure, const bool _compress,
                 auto lambda = [&](const uint8_t _id, const std::string_view _name,
                                   auto const& _rtype) {
                     using TypeT = typename std::decay_t<decltype(_rtype)>::type;
-                    _rmap.template registerMessage<TypeT>(_id, _name, complete_message<TypeT>, create_message_ptr);
+                    if constexpr (std::is_same_v<TypeT, bench::Request>) {
+                        _rmap.template registerMessage<TypeT>(_id, _name, complete_message<TypeT, TypeT>, create_message_ptr);
+                    } else {
+                        _rmap.template registerMessage<TypeT>(_id, _name, complete_catch_all<TypeT, TypeT>, create_message_ptr);
+                    }
                 };
                 bench::configure_protocol(lambda);
             });
@@ -162,7 +178,8 @@ int start(const bool _secure, const bool _compress,
 
 void stop(const bool _wait)
 {
-    cout << "Server Messages created: " << msg_count.load() << endl;
+    cout << "Server Requests created: " << req_count.load() << endl;
+    cout << "Server Responses created: " << res_count.load() << endl;
     ctx->manager.stop();
     ctx->scheduler.stop(_wait);
     cout << "ThreadPool stats: " << ctx->tp.statistic() << endl;
@@ -170,7 +187,11 @@ void stop(const bool _wait)
 }
 } // namespace bench_server
 
-void message_created()
+void request_created()
 {
-    ++bench_server::msg_count;
+    ++bench_server::req_count;
+}
+void response_created()
+{
+    ++bench_server::res_count;
 }

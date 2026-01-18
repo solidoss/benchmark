@@ -17,7 +17,8 @@
 #include <mutex>
 #include <solid/system/statistic.hpp>
 
-static void message_created();
+static void request_created();
+static void response_created();
 
 #include "bench_client_engine.hpp"
 #include "bench_protocol.hpp"
@@ -40,7 +41,8 @@ using CallPoolT     = ThreadPool<Function<void(), 80>, Function<void(), 80>>;
 
 namespace {
 
-atomic_size_t msg_count{0};
+atomic_size_t req_count{0};
+atomic_size_t res_count{0};
 
 struct Context {
     AioSchedulerT scheduler;
@@ -80,7 +82,8 @@ struct Context {
         cout << "Tokens trasferred: " << tokens_transferred << endl;
         cout << "Messages transferred: " << messages_transferred << endl;
         cout << "Payload transferred: " << payload_trasferred << endl;
-        cout << "Client Messages created: " << msg_count.load() << endl;
+        cout << "Client Requests created: " << req_count.load() << endl;
+        cout << "Client Responses created: " << res_count.load() << endl;
         cout << "RoundTrip(usecs): Min = " << round_trip_min_usec.load() << " Max = " << round_trip_max_usec.load() << " Avg = " << round_trip_sum_usec.load() / messages_transferred.load() << endl;
     }
 
@@ -92,8 +95,6 @@ auto create_message_ptr = [](auto& _rctx, auto& _rmsgptr) {
     using ElemT = typename PtrT::element_type;
 
     _rmsgptr = Pool<ElemT>::create();
-    _rmsgptr->str.clear();
-    _rmsgptr->vec.clear();
 };
 
 unique_ptr<Context> ctx;
@@ -125,16 +126,24 @@ void Context::collect(const size_t _token_count, const size_t _then_usec)
     }
 }
 
-template <class M>
+template <typename Req, typename Res>
+void complete_catch_all(frame::mprpc::ConnectionContext&,
+    frame::mprpc::SendMessagePointerT<Req>&,
+    frame::mprpc::RecvMessagePointerT<Res>&,
+    ErrorConditionT const&)
+{
+}
+
+template <typename Req, typename Res>
 void complete_message(frame::mprpc::ConnectionContext& _rctx,
-    frame::mprpc::SendMessagePointerT<M>&              _rsent_msg_ptr,
-    frame::mprpc::RecvMessagePointerT<M>&              _rrecv_msg_ptr,
+    frame::mprpc::SendMessagePointerT<Req>&            _rsent_msg_ptr,
+    frame::mprpc::RecvMessagePointerT<Res>&            _rrecv_msg_ptr,
     ErrorConditionT const&                             _rerror)
 {
     solid_dbg(generic_logger, Info, "message on client");
     solid_check(!_rerror);
     solid_check(_rrecv_msg_ptr && _rsent_msg_ptr);
-    solid_check(_rrecv_msg_ptr->str.empty() && _rrecv_msg_ptr->vec.size());
+    solid_check(not _rrecv_msg_ptr->vec.empty());
 
     auto& con_val = *_rctx.any().cast<pair<size_t, size_t>>();
 
@@ -219,7 +228,7 @@ void connection_start(frame::mprpc::ConnectionContext& _rctx)
         _rctx.any() = make_pair(crt_idx + 1 + v, ctx->loop_count - v);
         _rctx.service().sendMessage(
             _rctx.recipientId(),
-            frame::mprpc::make_message<bench::Message>(
+            frame::mprpc::make_pool_message<bench::Request>(
                 ctx->line_vec[crt_idx % ctx->line_vec.size()], to_microseconds_since_epoch()),
             {frame::mprpc::MessageFlagsE::AwaitResponse});
 #ifdef USE_TWO_MESSAGES
@@ -266,8 +275,13 @@ int start(const bool _secure, const bool _compress,
                 auto lambda = [&](const uint8_t _id, const std::string_view _name,
                                   auto const& _rtype) {
                     using TypeT = typename std::decay_t<decltype(_rtype)>::type;
-                    _rmap.template registerMessage<TypeT>(_id, _name,
-                        complete_message<TypeT>, create_message_ptr);
+                    if constexpr (std::is_same_v<TypeT, bench::Request>) {
+                        _rmap.template registerMessage<TypeT>(_id, _name,
+                            complete_message<bench::Request, bench::Response>, create_message_ptr);
+                    } else {
+                        _rmap.template registerMessage<TypeT>(_id, _name,
+                            complete_catch_all<TypeT, TypeT>, create_message_ptr);
+                    }
                 };
                 bench::configure_protocol(lambda);
             });
@@ -332,7 +346,11 @@ void stop(const bool _wait)
 }
 } // namespace bench_client
 
-void message_created()
+void request_created()
 {
-    ++bench_client::msg_count;
+    ++bench_client::req_count;
+}
+void response_created()
+{
+    ++bench_client::res_count;
 }

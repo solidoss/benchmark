@@ -12,40 +12,84 @@
 
 namespace bench {
 
-struct Message final : solid::frame::mprpc::Message, solid::Poolable<Message> {
-    using StringVectorT = std::vector<std::string>;
-    std::string   str;
-    StringVectorT vec;
-    uint64_t      microseconds_since_epoch = 0;
+struct Request final : solid::frame::mprpc::Message, solid::Poolable<Request> {
+    std::string str;
+    uint64_t    microseconds_since_epoch = 0;
 
-    Message()
+    Request()
     {
-        message_created();
+        request_created();
     }
 
-    Message(std::string&& _ustr, uint64_t _microseconds_since_epoch)
+    Request(std::string&& _ustr, uint64_t _microseconds_since_epoch)
         : str(std::move(_ustr))
         , microseconds_since_epoch(_microseconds_since_epoch)
     {
-        message_created();
+        request_created();
     }
 
-    Message(const std::string& _str, uint64_t _microseconds_since_epoch)
+    Request(const std::string& _str, uint64_t _microseconds_since_epoch)
         : str(_str)
         , microseconds_since_epoch(_microseconds_since_epoch)
     {
-        message_created();
+        request_created();
+    }
+
+    void init(std::string&& _ustr, uint64_t _microseconds_since_epoch)
+    {
+        str                      = std::move(_ustr);
+        microseconds_since_epoch = _microseconds_since_epoch;
+    }
+
+    void init(std::string const& _str, uint64_t _microseconds_since_epoch)
+    {
+        str                      = _str;
+        microseconds_since_epoch = _microseconds_since_epoch;
     }
 
     void init()
     {
         str.clear();
-        vec.clear();
     }
 
     SOLID_REFLECT_V1(_rr, _rthis, _rctx)
     {
         _rr.add(_rthis.str, _rctx, 1, "str");
+        _rr.add(_rthis.microseconds_since_epoch, _rctx, 3, "usecs");
+    }
+};
+
+struct Response final : solid::frame::mprpc::Message, solid::Poolable<Response> {
+    using StringVectorT = std::vector<std::string>;
+    StringVectorT vec;
+    uint64_t      microseconds_since_epoch = 0;
+
+    Response()
+    {
+        response_created();
+    }
+
+    explicit Response(
+        Request const& _req)
+        : solid::frame::mprpc::Message(_req)
+        , microseconds_since_epoch(_req.microseconds_since_epoch)
+    {
+        response_created();
+    }
+
+    void init(Request const& _req)
+    {
+        *static_cast<solid::frame::mprpc::Message*>(this) = _req;
+        vec.clear();
+    }
+
+    void init()
+    {
+        vec.clear();
+    }
+
+    SOLID_REFLECT_V1(_rr, _rthis, _rctx)
+    {
         _rr.add(_rthis.vec, _rctx, 2, "vec");
         _rr.add(_rthis.microseconds_since_epoch, _rctx, 3, "usecs");
     }
@@ -54,7 +98,8 @@ struct Message final : solid::frame::mprpc::Message, solid::Poolable<Message> {
 template <class Reg>
 inline void configure_protocol(Reg _rreg)
 {
-    _rreg(1, "Message", std::type_identity<Message>());
+    _rreg(1, "Request", std::type_identity<Request>());
+    _rreg(2, "Response", std::type_identity<Response>());
 }
 
 } // namespace bench
