@@ -31,7 +31,7 @@ namespace {
 struct Context;
 
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
-using ThreadPoolT   = ThreadPool<SmallFunctionT<void(Context&)>, SmallFunctionT<void(Context&)>>;
+using ThreadPoolT   = ThreadPool<SmallFunctionT<void(Context&)>, SmallFunctionT<void(Context&)>, solid::DefaultThreadPoolTraits<solid::EmptyThreadPoolStatistic>>;
 
 struct Context {
     Context(bool _use_tp)
@@ -121,7 +121,7 @@ int start(const bool _secure, const bool _compress,
 
     ctx->scheduler.start(3);
     if (_tp_thread_count) {
-        ctx->tp.start({_tp_thread_count, 1000, 0}, [](const size_t, Context&) {}, [](const size_t, Context&) {}, ref(*ctx));
+        ctx->tp.start({_tp_thread_count, 1000, 0, 1}, [](const size_t, Context&) {}, [](const size_t, Context&) {}, ref(*ctx));
     }
 
     {
