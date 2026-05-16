@@ -31,7 +31,7 @@ namespace {
 struct Context;
 
 using AioSchedulerT = frame::Scheduler<frame::aio::Reactor<Event<32>>>;
-using ThreadPoolT   = ThreadPool<SmallFunctionT<void(Context&)>, SmallFunctionT<void(Context&)>>;
+using ThreadPoolT   = ThreadPool<SmallFunctionT<void(Context&)>, SmallFunctionT<void(Context&)>, solid::DefaultThreadPoolTraits<solid::EmptyThreadPoolStatistic>>;
 
 struct Context {
     Context(bool _use_tp)
@@ -83,6 +83,32 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
 
     if (_rrecv_msg_ptr) {
         solid_check(!_rsent_msg_ptr);
+        auto handle_request = [_rrecv_msg_ptr = std::move(_rrecv_msg_ptr)] mutable {
+            auto res = solid::frame::mprpc::make_pool_message<bench::Response>(*_rrecv_msg_ptr);
+            if (true) {
+                istringstream iss{std::move(_rrecv_msg_ptr->str)};
+                while (!iss.eof()) {
+                    res->vec.emplace_back();
+                    iss >> res->vec.back();
+                }
+                _rrecv_msg_ptr->str.clear();
+            } else {
+                res->vec.emplace_back(std::move(_rrecv_msg_ptr->str));
+            }
+            return res;
+        };
+
+        auto& ctx_ref = *_rctx.service().any().cast<ContextRefT>();
+        if (ctx_ref.get().use_tp) {
+            ctx_ref.get().tp.pushOne(
+                [recipient_id = _rctx.recipientId(), handle_request = std::move(handle_request)](Context& _rctx) mutable {
+                    solid_check(!_rctx.ipcservice.sendResponse(recipient_id, handle_request()));
+                });
+        } else {
+            solid_check(!_rctx.service().sendResponse(_rctx, handle_request()));
+        }
+
+#if 0
         auto exec = [recipient_id = _rctx.recipientId(), _rrecv_msg_ptr = std::move(_rrecv_msg_ptr)](Context& _rctx) mutable {
             auto res = solid::frame::mprpc::make_pool_message<bench::Response>(*_rrecv_msg_ptr);
             if (true) {
@@ -104,6 +130,7 @@ void complete_message(frame::mprpc::ConnectionContext& _rctx,
         } else {
             exec(ctx_ref);
         }
+#endif
     }
 
     if (_rsent_msg_ptr) {
@@ -121,7 +148,7 @@ int start(const bool _secure, const bool _compress,
 
     ctx->scheduler.start(3);
     if (_tp_thread_count) {
-        ctx->tp.start({_tp_thread_count, 1000, 0}, [](const size_t, Context&) {}, [](const size_t, Context&) {}, ref(*ctx));
+        ctx->tp.start({_tp_thread_count, 1000, 0, 1}, [](const size_t, Context&) {}, [](const size_t, Context&) {}, ref(*ctx));
     }
 
     {
