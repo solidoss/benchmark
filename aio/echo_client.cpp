@@ -397,12 +397,14 @@ void Connection::doSend(frame::aio::ReactorContext& _rctx)
             ++rthis.crt_send_idx;
             if (rthis.crt_send_idx != params.repeat_count) {
                 rthis.doSend(_rctx);
+                rthis.sock.postRecvSome(_rctx, rthis.buf, BufferCapacity, Connection::onRecv);
             } else {
                 rthis.postStop(_rctx);
                 ++stats.donecnt;
             }
+        } else {
+            rthis.sock.postRecvSome(_rctx, rthis.buf, BufferCapacity, Connection::onRecv);
         }
-        rthis.sock.postRecvSome(_rctx, rthis.buf, BufferCapacity, Connection::onRecv);
     } else {
         solid_log(generic_logger, Error, &rthis << " postStop " << rthis.recvcnt << " " << _rctx.systemError().message());
         //++stats.donecnt;

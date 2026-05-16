@@ -23,10 +23,10 @@ target_link_libraries (solid_echo_server
 )
 
 #add_test(NAME SolidEcho100 COMMAND bench_test -s 0 --compress 0 -N 100 -t ../test_1.txt)
-add_test(SolidEcho100_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 100 & ../echo_client -N 100 -c localhost:12345 -R 1000; wait)")
-add_test(SolidEcho200_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 200 & ../echo_client -N 200 -c localhost:12345 -R 1000; wait)")
-add_test(SolidEcho400_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 400 & ../echo_client -N 400 -c localhost:12345 -R 1000; wait)")
+add_test(SolidEcho100_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 100 & while ! ss -tlnH 2>/dev/null | grep -q ':12345 '; do sleep 0.01; done; ../echo_client -N 100 -c localhost:12345 -R 1000; wait)")
+add_test(SolidEcho200_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 200 & while ! ss -tlnH 2>/dev/null | grep -q ':12345 '; do sleep 0.01; done; ../echo_client -N 200 -c localhost:12345 -R 1000; wait)")
+add_test(SolidEcho400_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 400 & while ! ss -tlnH 2>/dev/null | grep -q ':12345 '; do sleep 0.01; done; ../echo_client -N 400 -c localhost:12345 -R 1000; wait)")
 
-add_test(SolidRelayEcho100_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 100 & ./solid_relay_server -l 20000 -c localhost:12345 --count 100 & ../echo_client -N 100 -c localhost:20000 -R 1000; wait)")
-add_test(SolidRelayEcho200_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 200 & ./solid_relay_server -l 20000 -c localhost:12345 --count 200 & ../echo_client -N 200 -c localhost:20000 -R 1000; wait)")
-add_test(SolidRelayEcho400_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 400 & ./solid_relay_server -l 20000 -c localhost:12345 --count 400 & ../echo_client -N 400 -c localhost:20000 -R 1000; wait)")
+add_test(SolidRelayEcho100_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 100 & while ! ss -tlnH 2>/dev/null | grep -q ':12345 '; do sleep 0.01; done; ./solid_relay_server -l 20000 -c localhost:12345 --count 100 & while ! ss -tlnH 2>/dev/null | grep -q ':20000 '; do sleep 0.01; done; ../echo_client -N 100 -c localhost:20000 -R 1000; wait)")
+add_test(SolidRelayEcho200_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 200 & while ! ss -tlnH 2>/dev/null | grep -q ':12345 '; do sleep 0.01; done; ./solid_relay_server -l 20000 -c localhost:12345 --count 200 & while ! ss -tlnH 2>/dev/null | grep -q ':20000 '; do sleep 0.01; done; ../echo_client -N 200 -c localhost:20000 -R 1000; wait)")
+add_test(SolidRelayEcho400_1000 sh -c "(trap 'kill 0' SIGINT SIGTERM; ./solid_echo_server -l 12345 --count 400 & while ! ss -tlnH 2>/dev/null | grep -q ':12345 '; do sleep 0.01; done; ./solid_relay_server -l 20000 -c localhost:12345 --count 400 & while ! ss -tlnH 2>/dev/null | grep -q ':20000 '; do sleep 0.01; done; ../echo_client -N 400 -c localhost:20000 -R 1000; wait)")

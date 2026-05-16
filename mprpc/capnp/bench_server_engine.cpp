@@ -2,6 +2,7 @@
 #include "bench.capnp.h"
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
+#include <cstdlib>
 #include <future>
 #include <iostream>
 #include <kj/debug.h>
@@ -64,7 +65,7 @@ int start(const bool _secure, const bool _compress,
 void stop(const bool _wait)
 {
     if (_wait) {
-        _exit(0);
+        std::exit(0);
     }
 }
 

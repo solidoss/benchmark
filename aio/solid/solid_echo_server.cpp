@@ -425,6 +425,7 @@ void Listener::onAccept(frame::aio::ReactorContext& _rctx, SocketDevice& _rsd)
                 if (_rctx.error()) {
                     solid_log(generic_logger, Error, &rthis << " postStop " << rthis.recvcnt << " " << rthis.sendcnt);
                     rthis.postStop(_rctx);
+                    on_connection_stop();
                     break;
                 }
                 rthis.sendcnt += rthis.sendcrt;
