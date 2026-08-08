@@ -14,7 +14,8 @@ using IndexT                          = uint64_t;
 constexpr size_t buffer_capacity      = 0;
 atomic<uint64_t> handle_call_count    = 0;
 atomic<uint64_t> active_message_count = 0;
-atomic<bool>     running              = true;
+
+alignas(std::hardware_constructive_interference_size) atomic<bool> running = true;
 
 struct Message {
     IndexT index_{0};
@@ -55,6 +56,8 @@ int main(int argc, char* argv[])
 {
     solid::log_start(std::cerr, {".*:EW", "test:EWS"});
 
+    constexpr size_t queue_capacity = 1024 * 16;
+
     size_t repeat_count     = 10000;
     size_t message_count    = 10000;
     size_t tp1_thread_count = 4;
@@ -68,7 +71,7 @@ int main(int argc, char* argv[])
         Context     ctx2{tp1};
 
         tp1.start(
-            {tp1_thread_count},
+            {tp1_thread_count, queue_capacity, 1024, 3330},
             [](size_t, Context&) {},
             [](size_t, Context&) {},
             [](VariantT& _var, Context& _rctx) {
@@ -80,7 +83,7 @@ int main(int argc, char* argv[])
             ref(ctx1));
 
         tp2.start(
-            {tp2_thread_count},
+            {tp2_thread_count, queue_capacity, 1024, 3330},
             [](size_t, Context&) {},
             [](size_t, Context&) {},
             [](VariantT& _var, Context& _rctx) {
@@ -93,11 +96,15 @@ int main(int argc, char* argv[])
 
         active_message_count  = message_count;
         const auto start_time = chrono::high_resolution_clock::now();
-        for (size_t i = 0; i < message_count; ++i) {
-            if (use_unique_ptr) {
-                tp1.pushOne(make_unique<Message>(repeat_count));
-            } else {
-                tp1.pushOne(Message{repeat_count});
+        {
+            std::array<std::reference_wrapper<ThreadPoolT>, 2> tps{tp1, tp2};
+
+            for (size_t i = 0; i < message_count; ++i) {
+                if (use_unique_ptr) {
+                    tps[i % 2].get().pushOne(make_unique<Message>(repeat_count));
+                } else {
+                    tps[i % 2].get().pushOne(Message{repeat_count});
+                }
             }
         }
 
