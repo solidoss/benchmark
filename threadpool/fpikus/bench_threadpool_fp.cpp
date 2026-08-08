@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
     size_t         message_count    = 10000;
     size_t         tp1_thread_count = 4;
     size_t         tp2_thread_count = 4;
-    constexpr bool use_unique_ptr   = true;
+    constexpr bool use_unique_ptr   = false;
 
     constexpr size_t queue_capacity = 1024 * 16;
 
@@ -123,10 +123,19 @@ int main(int argc, char* argv[])
 
     active_message_count  = message_count;
     const auto start_time = chrono::high_resolution_clock::now();
-    for (size_t i = 0; i < message_count; ++i) {
-        auto mp = make_unique<Message>(repeat_count);
-        while (!q1.push(message_key, std::move(mp)))
-            ;
+    {
+        std::array<std::reference_wrapper<QueueT>, 2> qs{q1, q2};
+        for (size_t i = 0; i < message_count; ++i) {
+            if (use_unique_ptr) {
+                auto mp = make_unique<Message>(repeat_count);
+                while (!qs[i % 2].get().push(message_key, std::move(mp)))
+                    ;
+            } else {
+                Message msg{repeat_count};
+                while (!qs[i % 2].get().push(message_key, std::move(msg)))
+                    ;
+            }
+        }
     }
 
     running.wait(true);

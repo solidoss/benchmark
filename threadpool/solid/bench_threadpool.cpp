@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
         Context     ctx2{tp1};
 
         tp1.start(
-            {tp1_thread_count, queue_capacity, 1024, 3330},
+            {tp1_thread_count, queue_capacity, 1024, 8},
             [](size_t, Context&) {},
             [](size_t, Context&) {},
             [](VariantT& _var, Context& _rctx) {
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
             ref(ctx1));
 
         tp2.start(
-            {tp2_thread_count, queue_capacity, 1024, 3330},
+            {tp2_thread_count, queue_capacity, 1024, 8},
             [](size_t, Context&) {},
             [](size_t, Context&) {},
             [](VariantT& _var, Context& _rctx) {
